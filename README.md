@@ -12,7 +12,13 @@ Inspired by [this Esolangs page](https://esolangs.org/wiki/Deque) and [this Conc
 
 ### Hello World
 ```bash
+!"Hello World!" !ow
+```
 
+### Factorial
+```bash
+# given an int n (n -- n!)
+!{!dup !2 !rot <!} !rot {pop! 1!}! {!dup !1 !- 2! -1! {!in !*}! !rot !for}! !rot !ite
 ```
 
 # Types
@@ -54,7 +60,7 @@ The latter, double-quote syntax is sugar for a `[Char]`.
 
 # Blocks
 
-Blocks are code treated as a literal. Code surrounded in curly brackets `{}` are pushed as a literal. You can nest blocks in blocks.
+Blocks are code treated as a literal. Code surrounded in curly brackets `{}` are pushed as a literal. You can nest blocks in blocks. Blocks can contain no code (a nop).
 
 # Comments
 
@@ -65,11 +71,11 @@ Comments start with a hash mark `#` and end at the end of the line.
 1! !2 !+ # comment after some code
 ```
 
-
 # Appending Operator `!`
 
-Instructions and literals are either prepended or postpended by an exclamation mark `!`.
-The location of this exclamation mark determines where on the deque it looks to: the front (`!add`), like a stack, or the back (`add!`), like a queue.
+Instructions and literals are either prepended or postpended by a bang `!`.
+If prepended, instructions and literals push and pop from the front (left).
+If postpended, instructions and literals push and pop from the back (right).
 
 # Instructions
 
@@ -79,7 +85,7 @@ Instructions have the general philosophy of "discard if failed". If an instructi
 * (`push`: Handled by literals.)
 * `pop`/`$`: Discard one element.
 * `dup`/`:`: Duplicate one element.
-* `rot`/`@` : Rotate the deque one element towards a direction (either to the front `!rot` or the back `rot!`).
+* `rot`/`@` : Rotate the deque one element towards a direction (either to the front/left `!rot` or the back/right `rot!`).
 * `over`/`^` : Duplicate the element below the top/bottom element.
 
 ## Castings
@@ -107,7 +113,7 @@ It tries to do integer operations by default; if there is a float, it pushes a f
 
 ## Comparisons and Boolean Operations
 
-All of these operators push a boolean.
+All of these operators push a boolean. All binary operators pop `a` and `b` and push `a OP b`,
 
 * `>`,`>=`,`<`,`<=`,`=`: Numerical comparison. You can compare ints, floats, and chars to each other.
 * `&&`, `||`, `nn`: Logical AND, OR, NOT.
@@ -129,4 +135,18 @@ List operations still operate on `[Char]` because `[Char]` is still a list.
 
 # Control Flow
 
-* 
+All of these instructs pop blocks that are executed. In the following, a "condition block" is a block that leaves a boolean on the stack when provided a stack that satisfies its instructions. A "body block" is some block of code.
+
+* `loop`: Infinite loop.
+* `for`: Pops a lower bound, upper bound, an increment, and a body block. Equivalent to C-like `for (i=a; a < b; a+=c) { block; }`.
+* `in`: Pushes the current loop index.
+* `while`: Pops 2 blocks: a condition block, and a body block. The body block executes while the condition block is true.
+* `break`: Exit the current loop.
+* `itl`: If-Then-Else. Pops 3 blocks: a condtion block, a true block, and a false block. The blocks execute based on the condition block's output. If true, the true block executes. If false, the false block executes.
+
+# Input and Output
+
+* `il`: Consumes and pushes a line from STDIN.
+* `iw`: Consumes and pushes a word from STDIN. A word consumes up to the next whitepsace.
+* `ol`: Pops and prints an element, with a newline. `[Char]` is printed as a string.
+* `ow`: Pops and prints an element. `[Char]` is printed as a string.
