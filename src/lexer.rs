@@ -1,39 +1,4 @@
-#[derive(Debug)]
-pub enum TokenType {
-    BlockBegin,
-    BlockEnd,
-    ListBegin,
-    ListEnd,
-    Instruction,
-    Literal(LiteralType),
-    Bang,
-}
-
-#[derive(Debug)]
-pub enum LiteralType {
-    Int,
-    Float,
-    Bool,
-    Char,
-    String,
-}
-
-#[derive(Debug)]
-pub struct Token {
-    pub token_type: TokenType,
-    pub string: String,
-    pub index: usize,
-}
-
-impl Token {
-    pub fn new(token_type: TokenType, string: String, index: usize) -> Token {
-        Token {
-            token_type,
-            string,
-            index,
-        }
-    }
-}
+use crate::util;
 
 #[derive(Debug)]
 pub enum LexerState {
@@ -48,6 +13,10 @@ pub enum LexerState {
     InFloat,
 }
 
+type Token = util::Token;
+type Tt = util::TokenType;
+type Lt = util::LiteralType;
+
 /// Converts code string into a Vec<Token>.
 ///
 /// # Arguments
@@ -56,8 +25,6 @@ pub enum LexerState {
 /// * A Vec<Token> containing all tokens in the code string.
 pub fn tokenize(code: String) -> Vec<Token> {
     type Ls = LexerState;
-    type Tt = TokenType;
-    type Lt = LiteralType;
     let code_bytes = code.into_bytes();
     let mut tokens = Vec::new();
     let mut current_state = Ls::Begin;
@@ -108,6 +75,12 @@ pub fn tokenize(code: String) -> Vec<Token> {
                     '[' => {
                         token_string.push(c);
                         tokens.push(Token::new(Tt::ListBegin, token_string, i));
+                        token_string = String::new();
+                        i += 1;
+                    }
+                    ',' => {
+                        token_string.push(c);
+                        tokens.push(Token::new(Tt::ListSep, token_string, i));
                         token_string = String::new();
                         i += 1;
                     }
