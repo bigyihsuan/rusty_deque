@@ -5,14 +5,13 @@ This is the `ARCHITECTURE.md` file for describing the general structure of the p
 The grammar of this language is as follows in this EBNF:
 
 ```
-Code = Op*
-Op = Instr | Literal | Block
-Block = '!' '{' Code '}' | '{' Code '}' '!'
-Instr = '!' Instruction | Instruction '!'
-Instruction = Literal | symbols or alphabets
+Code = Instr*
+Inter = '!' Op | Op '!'
+Op = Literal | Instruction | Block
+Block = '{' Code '}'
 Literal = Int | Float | Bool | Char | String | List
-Int = digits | '-' digits
-Float = digits '.' digits | '-' digits '.' digits
+Int = sone int
+Float = some float
 Bool = "true" | "false"
 Char = "'" c "'"
 String = '"' characters '"'

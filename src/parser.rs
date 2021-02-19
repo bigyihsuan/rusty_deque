@@ -2,29 +2,20 @@ use crate::util;
 
 type Token = util::Token;
 
-pub type Code = Vec<Op>;
+pub type Code = Vec<Instr>;
 
-pub enum Op {
-    Instr,
-    Literal,
-    Block,
-}
-
-pub enum Block {
-    Left(Code),
-    Right(Code),
-}
-
+#[derive(Debug)]
 pub enum Instr {
-    Left(Instruction),
-    Right(Instruction),
+    Left(Op),
+    Right(Op),
 }
-
-pub enum Instruction {
+#[derive(Debug)]
+pub enum Op {
     Literal(Literal),
     Instruction(Token),
+    Block(Code),
 }
-
+#[derive(Debug)]
 pub enum Literal {
     Int(Token),
     Float(Token),
@@ -36,8 +27,18 @@ pub enum Literal {
 
 type List = Vec<Literal>;
 
-pub fn parse(code: Vec<Token>) -> Code {
+pub fn parse(tokens: Vec<Token>) -> Code {
     let mut tree = Code::new();
+
+    let mut i = 0;
+    while i < tokens.len() {
+        let tok = tokens.get(i).expect("outside of token bounds");
+
+        // match tok.token_type {
+
+        // }
+        i += 1;
+    }
 
     tree
 }

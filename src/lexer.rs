@@ -205,7 +205,7 @@ pub fn tokenize(code: String) -> Vec<Token> {
                     token_string = String::new();
                     current_state = Ls::Begin;
                 }
-                '!' | '{' | '}' | '[' | ']' | '"' => {
+                '!' | '{' | '}' | '[' | ']' | '"' | ',' => {
                     tokens.push(Token::new(Tt::Literal(Lt::Int), token_string, i));
                     token_string = String::new();
                     current_state = Ls::Begin;
@@ -226,7 +226,7 @@ pub fn tokenize(code: String) -> Vec<Token> {
                     token_string = String::new();
                     current_state = Ls::Begin;
                 }
-                '!' | '{' | '}' | '[' | ']' | '"' => {
+                '!' | '{' | '}' | '[' | ']' | '"' | ',' => {
                     tokens.push(Token::new(Tt::Literal(Lt::Float), token_string, i));
                     token_string = String::new();
                     current_state = Ls::Begin;
