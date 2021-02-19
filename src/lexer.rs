@@ -25,14 +25,14 @@ type Lt = util::LiteralType;
 /// * A Vec<Token> containing all tokens in the code string.
 pub fn tokenize(code: String) -> Vec<Token> {
     type Ls = LexerState;
-    let code_bytes = code.into_bytes();
+    let code_chars: Vec<char> = code.chars().collect();
     let mut tokens = Vec::new();
     let mut current_state = Ls::Begin;
 
     let mut i: usize = 0;
     let mut token_string = String::new();
-    while i < code_bytes.len() {
-        let c = *code_bytes.get(i).expect("Outside of code string range") as char;
+    while i < code_chars.len() {
+        let c = *code_chars.get(i).expect("Outside of code string range") as char;
         match current_state {
             Ls::Begin => {
                 // possible characters encountered:
@@ -92,8 +92,13 @@ pub fn tokenize(code: String) -> Vec<Token> {
                         i += 1;
                     }
                     '"' => {
-                        token_string.push(c);
+                        // token_string.push(c);
                         current_state = Ls::InString;
+                        i += 1;
+                    }
+                    '\'' => {
+                        // token_string.push(c);
+                        current_state = Ls::InChar;
                         i += 1;
                     }
                     '0'..='9' => {
