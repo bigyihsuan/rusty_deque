@@ -4,7 +4,7 @@ A simple, deque-based programming language to practice writing Rust.
 
 # Deque
 
-The main data structure is a [deque](https://en.wikipedia.org/wiki/Deque), which allows insertion and removal of elements at both ends.
+The main data structure is a [deque](https://en.wikipedia.org/wiki/Deque), which allows the insertion and removal of elements at both ends.
 
 Inspired by [this Esolangs page](https://esolangs.org/wiki/Deque) and [this Concatenative page](https://concatenative.org/wiki/view/Deque).
 
@@ -13,6 +13,11 @@ Inspired by [this Esolangs page](https://esolangs.org/wiki/Deque) and [this Conc
 ### Hello World
 ```bash
 !"Hello World!" !ow
+```
+
+### Cat
+```bash
+!{!ia !ol} loop!
 ```
 
 ### Factorial
@@ -132,6 +137,7 @@ List operations still operate on `[Char]` because `[Char]` is still a list.
 * `l/`: List slice. Pops a list, and 2 ints `a` and `b`. Pushes a slice of the list from index `a`, inclusive, to `b`, exclusive.
 * `li`: List index. Pops a list and an int, pushes the element at that index. Discards if the index is outside of list bounds.
 * `ll`: List length. Pops a list and pushes the number of elements in the list.
+* `ld`: List destructuring. Pops a list and pushes all elements in that list.
 
 # Control Flow
 
@@ -146,7 +152,8 @@ All of these instructs pop blocks that are executed. In the following, a "condit
 
 # Input and Output
 
-* `il`: Consumes and pushes a line from STDIN.
-* `iw`: Consumes and pushes a word from STDIN. A word consumes up to the next whitepsace.
+* `il`: Consumes and pushes a line as a string from STDIN.
+* `iw`: Consumes and pushes a word as a string from STDIN. A word consumes up to the next whitepsace.
+* `ia`: Consumes all bytes from STDIN and pushes it as a string to the stack.
 * `ol`: Pops and prints an element, with a newline. `[Char]` is printed as a string.
 * `ow`: Pops and prints an element. `[Char]` is printed as a string.

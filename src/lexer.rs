@@ -1,6 +1,5 @@
 #[derive(Debug)]
 pub enum TokenType {
-    Comment,
     BlockBegin,
     BlockEnd,
     ListBegin,
@@ -8,7 +7,6 @@ pub enum TokenType {
     Instruction,
     Literal(LiteralType),
     Bang,
-    End,
 }
 
 #[derive(Debug)]
@@ -42,11 +40,11 @@ pub enum LexerState {
     Begin,
     InComment,
     InInstructionOrBool,
+    InInstructionOrNumber,
     InInstruction,
     InString,
     InChar,
     InNumber,
-    InInt,
     InFloat,
 }
 
@@ -79,52 +77,72 @@ pub fn tokenize(code: String) -> Vec<Token> {
                 // ] => list end
                 // " => string literal start
                 // ' => char literal start
+                // - => instruction or number literal
                 // digit => number literal
                 // sumbol => instruction
                 // non-digit => instruction or bool
                 // whitespace => ignore, pop out
-                token_string.push(c);
                 match c {
                     '#' => {
                         current_state = Ls::InComment;
                         token_string = String::new();
                     }
                     '!' => {
+                        token_string.push(c);
                         tokens.push(Token::new(Tt::Bang, token_string, i));
                         token_string = String::new();
+                        i += 1;
                     }
                     '{' => {
+                        token_string.push(c);
                         tokens.push(Token::new(Tt::BlockBegin, token_string, i));
                         token_string = String::new();
+                        i += 1;
                     }
                     '}' => {
+                        token_string.push(c);
                         tokens.push(Token::new(Tt::BlockEnd, token_string, i));
                         token_string = String::new();
+                        i += 1;
                     }
                     '[' => {
+                        token_string.push(c);
                         tokens.push(Token::new(Tt::ListBegin, token_string, i));
                         token_string = String::new();
+                        i += 1;
                     }
                     ']' => {
+                        token_string.push(c);
                         tokens.push(Token::new(Tt::ListEnd, token_string, i));
                         token_string = String::new();
+                        i += 1;
                     }
                     '"' => {
+                        token_string.push(c);
                         current_state = Ls::InString;
+                        i += 1;
                     }
                     '0'..='9' => {
+                        token_string.push(c);
                         current_state = Ls::InNumber;
+                        i += 1;
                     }
-                    '$' | ':' | '@' | '^' | '+' | '-' | '*' | '/' | '&' | '|' | '>' | '<' => {
+                    '$' | ':' | '@' | '^' | '+' | '*' | '/' | '&' | '|' | '>' | '<' => {
+                        token_string.push(c);
                         current_state = Ls::InInstruction;
+                        i += 1;
+                    }
+                    '-' => {
+                        token_string.push(c);
+                        current_state = Ls::InInstructionOrNumber;
+                        i += 1;
                     }
                     'A'..='Z' | 'a'..='z' => {
+                        token_string.push(c);
                         current_state = Ls::InInstructionOrBool;
+                        i += 1;
                     }
-                    c if c.is_whitespace() => {
-                        tokens.pop();
-                    }
-                    _ => {}
+                    _ => i += 1,
                 }
             }
             Ls::InComment => {
@@ -133,6 +151,8 @@ pub fn tokenize(code: String) -> Vec<Token> {
                 // else => continue
                 if let '\n' = c {
                     current_state = Ls::Begin;
+                } else {
+                    i += 1;
                 }
             }
             Ls::InInstructionOrBool => {
@@ -142,23 +162,44 @@ pub fn tokenize(code: String) -> Vec<Token> {
                         tokens.push(Token::new(Tt::Literal(Lt::Bool), token_string, i));
                         token_string = String::new();
                         current_state = Ls::Begin;
+                        i += 1;
                     }
-                    tok_str if tok_str.chars().last().expect("").is_whitespace() => {
-                        current_state = Ls::InInstruction;
-                    }
-                    &_ => {
-                        token_string.push(c);
-                    }
+                    &_ => match c {
+                        c if c.is_whitespace() => {
+                            current_state = Ls::InInstruction;
+                        }
+                        '!' | '{' | '}' | '[' | ']' | '"' => {
+                            current_state = Ls::InInstruction;
+                        }
+                        _ => {
+                            token_string.push(c);
+                            i += 1;
+                        }
+                    },
                 }
             }
+            Ls::InInstructionOrNumber => match c {
+                '0'..='9' => {
+                    current_state = Ls::InNumber;
+                }
+                _ => {
+                    current_state = Ls::InInstruction;
+                }
+            },
             Ls::InInstruction => match c {
                 c if c.is_whitespace() => {
                     tokens.push(Token::new(Tt::Instruction, token_string, i));
                     token_string = String::new();
                     current_state = Ls::Begin;
                 }
+                '!' | '{' | '}' | '[' | ']' | '"' => {
+                    tokens.push(Token::new(Tt::Instruction, token_string, i));
+                    token_string = String::new();
+                    current_state = Ls::Begin;
+                }
                 _ => {
                     token_string.push(c);
+                    i += 1;
                 }
             },
             Ls::InString => match c {
@@ -166,9 +207,11 @@ pub fn tokenize(code: String) -> Vec<Token> {
                     tokens.push(Token::new(Tt::Literal(Lt::String), token_string, i));
                     token_string = String::new();
                     current_state = Ls::Begin;
+                    i += 1;
                 }
                 _ => {
                     token_string.push(c);
+                    i += 1;
                 }
             },
             Ls::InChar => match c {
@@ -176,22 +219,51 @@ pub fn tokenize(code: String) -> Vec<Token> {
                     tokens.push(Token::new(Tt::Literal(Lt::Char), token_string, i));
                     token_string = String::new();
                     current_state = Ls::Begin;
+                    i += 1;
                 }
                 _ => {
                     token_string.push(c);
+                    i += 1;
                 }
             },
-            Ls::InNumber => {
-                unimplemented!()
-            }
-            Ls::InInt => {
-                unimplemented!()
-            }
-            Ls::InFloat => {
-                unimplemented!()
-            }
+            Ls::InNumber => match c {
+                c if c.is_whitespace() => {
+                    tokens.push(Token::new(Tt::Literal(Lt::Int), token_string, i));
+                    token_string = String::new();
+                    current_state = Ls::Begin;
+                }
+                '!' | '{' | '}' | '[' | ']' | '"' => {
+                    tokens.push(Token::new(Tt::Literal(Lt::Int), token_string, i));
+                    token_string = String::new();
+                    current_state = Ls::Begin;
+                }
+                '.' => {
+                    current_state = Ls::InFloat;
+                    token_string.push(c);
+                    i += 1;
+                }
+                _ => {
+                    token_string.push(c);
+                    i += 1;
+                }
+            },
+            Ls::InFloat => match c {
+                c if c.is_whitespace() => {
+                    tokens.push(Token::new(Tt::Literal(Lt::Float), token_string, i));
+                    token_string = String::new();
+                    current_state = Ls::Begin;
+                }
+                '!' | '{' | '}' | '[' | ']' | '"' => {
+                    tokens.push(Token::new(Tt::Literal(Lt::Float), token_string, i));
+                    token_string = String::new();
+                    current_state = Ls::Begin;
+                }
+                _ => {
+                    token_string.push(c);
+                    i += 1;
+                }
+            },
         }
-        i += 1
     }
     tokens
 }
