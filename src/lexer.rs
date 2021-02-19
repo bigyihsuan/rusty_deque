@@ -41,6 +41,7 @@ pub fn tokenize(code: String) -> Vec<Token> {
                 // { => block start
                 // } => block end
                 // [ => list start
+                // , => list separator
                 // ] => list end
                 // " => string literal start
                 // ' => char literal start
