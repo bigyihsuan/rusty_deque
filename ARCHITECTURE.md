@@ -6,10 +6,10 @@ The grammar of this language is as follows in this EBNF:
 
 ```
 Code = Instr*
-Inter = '!' Op | Op '!'
-Op = Literal | Instruction | Block
+Instr = '!' Op | Op '!'
+Op = Literal | Instruction
 Block = '{' Code '}'
-Literal = Int | Float | Bool | Char | String | List
+Literal = Int | Float | Bool | Char | String | List | Block
 Int = sone int
 Float = some float
 Bool = "true" | "false"

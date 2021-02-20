@@ -1,5 +1,4 @@
 mod lexer;
-mod lexer2;
 mod parser;
 mod util;
 
@@ -11,13 +10,8 @@ fn main() {
     let mut c = String::from(code);
     c.push(' ');
     let tokens = lexer::tokenize(c);
-    let tokens2 = lexer2::tokenize(String::from(code));
     println!("Code: {}", String::from(code));
-    // for t in tokens {
-    //     println!("{:?}", t);
-    // }
-    // println!("");
-    for t in tokens2 {
+    for t in tokens {
         println!("{:?}", t);
     }
     //parser::parse(tokens);
