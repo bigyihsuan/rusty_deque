@@ -8,11 +8,11 @@ The grammar of this language is as follows in this EBNF:
 Code = Instr*
 Instr = '!' Op | Op '!'
 Op = Literal | Instruction
-Block = '{' Code '}'
 Literal = Int | Float | Bool | Char | String | List | Block
+Block = '{' Code '}'
 Int = sone int
 Float = some float
-Bool = "true" | "false"
+Bool = true | false
 Char = "'" c "'"
 String = '"' characters '"'
 List = '[' (Literal ',')* ']'

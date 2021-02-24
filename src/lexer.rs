@@ -1,4 +1,4 @@
-use crate::util;
+use crate::util::lex;
 
 #[derive(Debug)]
 pub enum LexerState {
@@ -13,9 +13,9 @@ pub enum LexerState {
     InFloat,
 }
 
-type Token = util::Token;
-type Tt = util::TokenType;
-type Lt = util::LiteralType;
+type Token = lex::Token;
+type Tt = lex::TokenType;
+type Lt = lex::LiteralType;
 
 /// Converts code string into a Vec<Token>.
 ///
