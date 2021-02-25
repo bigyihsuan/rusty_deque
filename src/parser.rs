@@ -6,30 +6,38 @@ type Lt = lex::LiteralType;
 
 enum ParseState {
     Begin,
+    InOpLeft,
+    InOpRight,
     InOp,
     InBlock,
     InList,
+    End,
 }
 
 pub fn parse(tokens: Vec<Token>) -> par::Code {
+    type Ps = ParseState;
     let mut nodes = par::Code::new();
+    let mut state = Ps::Begin;
+    let mut tok_iter = tokens.iter();
+    loop {
+        let mut nodeLeft = par::ExecLeft {
+            left: par::ExecT::None,
+            right: None,
+        };
+        let mut nodeRight = par::ExecRight {
+            left: None,
+            right: par::ExecT::None,
+        };
 
-    for tok in tokens {
-        match &tok.token_type {
-            Tt::BlockBegin => {}
-            Tt::BlockEnd => {}
-            Tt::ListBegin => {}
-            Tt::ListSep => {}
-            Tt::ListEnd => {}
-            Tt::Instruction => {}
-            Tt::Literal(lt) => match lt {
-                Int => {}
-                Float => {}
-                Bool => {}
-                Char => {}
-                String => {}
-            },
-            Tt::Bang => {}
+        let def = Token {
+            token_type: Tt::End,
+            string: "".to_owned(),
+            index: usize::MAX,
+        };
+        let tok = tok_iter.next().unwrap_or(&def);
+
+        if let Ps::End = state {
+            break;
         }
     }
     nodes

@@ -5,9 +5,10 @@ This is the `ARCHITECTURE.md` file for describing the general structure of the p
 The grammar of this language is as follows in this EBNF:
 
 ```
-Code = Instr*
-Instr = '!' Op | Op '!'
+Code = Exec*
+Exec = '!' Op | Op '!'
 Op = Literal | Instruction
+Instruction = some instruction
 Literal = Int | Float | Bool | Char | String | List | Block
 Block = '{' Code '}'
 Int = sone int
