@@ -11,17 +11,17 @@ Inspired by [this Esolangs page](https://esolangs.org/wiki/Deque) and [this Conc
 # Examples
 
 ### Hello World
-```bash
+```c
 !"Hello World!" !ow
 ```
 
 ### Cat
-```bash
+```c
 !{!ia !ol} loop!
 ```
 
 ### Factorial
-```bash
+```c
 # given an int n (n -- n!)
 !{!dup !2 !rot <!} !rot {pop! 1!}! {!dup !1 !- 2! -1! {!in !*}! !rot !for}! !rot !ite
 ```

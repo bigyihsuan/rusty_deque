@@ -20,19 +20,15 @@ List = '[' (Literal ',')* ']'
 ```
 
 # Lexer
+Contains 2 modules:
 
-The lexer converts an input code string and converts it into a list of tokens.
-
-Contains `TokenType`, `LiteralType`, `Token`, and `tokenize()` for use.
-
-`tokenize()` takes in a string and outputs a list of tokens found in that string.
+* `tok`: Contains definitions for tokens.
+* `lex`: Converts `rusty_deque` source code into a list of tokens.
 
 # Parser
+Contains 2 modules:
 
-The parser takes the list of tokens from the lexer and parses it into a abstract syntax tree.
+* `ast`: Contains definitions for the AST of `rusty_deque`, based on a Visitor pattern.
+* `par`: Parses a list of tokens into an AST.
 
-The parser, in addition, validates the AST for evaluation.
-
-# Evaluater
-
-The evaluator takes the AST from the parser and runs it.
+# Evaluator
