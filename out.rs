@@ -27,3 +27,12 @@ Token { token_type: Bang, string: "!", index: 43 }
 Token { token_type: BlockEnd, string: "}", index: 44 }
 Token { token_type: Bang, string: "!", index: 45 }
 Token { token_type: End, string: "", index: 47 }
+[]
+( 
+    !100 
+    [true, 2, 3.45, '6', {
+        !100 
+        [false, 7, 8.9, 'a', ]! 
+    }, ]! 
+
+)

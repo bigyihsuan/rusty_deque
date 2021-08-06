@@ -3,21 +3,21 @@ pub mod ast {
     // * Instruction
     // * all literals except Block, List
     pub type Code = Vec<Exec>;
-
+    #[derive(Debug)]
     pub enum Exec {
         Left(Op),
         Right(Op),
     }
-
+    #[derive(Debug)]
     pub enum Op {
         Literal(Literal),
         Instruction(Instruction),
     }
-
+    #[derive(Debug)]
     pub struct Instruction {
         pub value: String,
     }
-
+    #[derive(Debug)]
     pub enum Literal {
         Integer(i64),
         Float(f64),
@@ -44,12 +44,28 @@ pub mod visit {
         fn visit_literal(&mut self, l: &Literal) -> T;
     }
 
-    pub struct TreePrinter;
+    pub struct TreePrinter {
+        pub indent: usize,
+    }
+    impl TreePrinter {
+        fn new() -> TreePrinter {
+            TreePrinter { indent: 0 }
+        }
+    }
+
     impl Visitor<String> for TreePrinter {
         fn visit_code(&mut self, c: &Code) -> String {
-            let mut s: String = String::from("( \n    ");
+            let mut s: String = String::from("( \n");
+            self.indent += 1;
             for e in &*c {
-                s += &String::from(format!("{}", self.visit_exec(&e)));
+                for _ in 0..self.indent {
+                    s += "    "
+                }
+                s += &String::from(format!("{}\n", self.visit_exec(&e)));
+            }
+            self.indent -= 1;
+            for _ in 0..self.indent {
+                s += "    "
             }
             s += "\n)";
             s
@@ -84,11 +100,19 @@ pub mod visit {
                     s
                 }
                 Literal::Block(b) => {
-                    let mut s = String::from("{");
+                    let mut s = String::from("{\n");
+                    self.indent += 1;
                     for e in b {
-                        s += &String::from(format!("{} ", &self.visit_exec(&e)));
+                        for _ in 0..self.indent {
+                            s += "    "
+                        }
+                        s += &String::from(format!("{}\n", &self.visit_exec(&e)));
                     }
-                    s.push('}');
+                    self.indent -= 1;
+                    for _ in 0..self.indent {
+                        s += "    "
+                    }
+                    s += "}";
                     s
                 }
             }
@@ -117,7 +141,9 @@ pub mod par {
         End,
         Error(String),
     }
-
+    pub fn parse_tokens(tokens: &Vec<Token>) -> ast::Code {
+        ast::Code::new()
+    }
     // pub fn parse(tokens: Vec<Token>) -> ast::Code {
     //     type TokenType = tok::TokenType;
     //     let mut code = ast::Code::new();
