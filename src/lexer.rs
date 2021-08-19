@@ -1,5 +1,5 @@
 pub mod tok {
-    #[derive(Debug)]
+    #[derive(Debug, PartialEq)]
     pub enum TokenType {
         BlockBegin,
         BlockEnd,
@@ -11,7 +11,7 @@ pub mod tok {
         Bang,
         End,
     }
-    #[derive(Debug)]
+    #[derive(Debug, PartialEq)]
     pub enum LiteralType {
         Int,
         Float,
@@ -24,13 +24,25 @@ pub mod tok {
         pub token_type: TokenType,
         pub string: String,
         pub index: usize,
+        pub tok_index: usize,
     }
     impl Token {
-        pub fn new(token_type: TokenType, string: String, index: usize) -> Token {
+        pub fn new(token_type: TokenType, string: String, index: usize, tok_index: usize) -> Token {
             Token {
                 token_type,
                 string,
                 index,
+                tok_index,
+            }
+        }
+    }
+    impl Default for Token {
+        fn default() -> Token {
+            Token {
+                token_type: TokenType::End,
+                string: "".to_string(),
+                index: usize::MAX,
+                tok_index: usize::MAX,
             }
         }
     }
@@ -69,6 +81,7 @@ pub mod lex {
         let mut current_state = LexerState::Begin;
 
         let mut i: usize = 0;
+        let mut ti: usize = 0;
         let mut token_string = String::new();
         while i < code_chars.len() {
             let c = *code_chars.get(i).expect("Outside of code string range") as char;
@@ -96,39 +109,45 @@ pub mod lex {
                         }
                         '!' => {
                             token_string.push(c);
-                            tokens.push(Token::new(Tt::Bang, token_string, i));
+                            tokens.push(Token::new(Tt::Bang, token_string, i, ti));
                             token_string = String::new();
                             i += 1;
+                            ti += 1;
                         }
                         '{' => {
                             token_string.push(c);
-                            tokens.push(Token::new(Tt::BlockBegin, token_string, i));
+                            tokens.push(Token::new(Tt::BlockBegin, token_string, i, ti));
                             token_string = String::new();
                             i += 1;
+                            ti += 1;
                         }
                         '}' => {
                             token_string.push(c);
-                            tokens.push(Token::new(Tt::BlockEnd, token_string, i));
+                            tokens.push(Token::new(Tt::BlockEnd, token_string, i, ti));
                             token_string = String::new();
                             i += 1;
+                            ti += 1;
                         }
                         '[' => {
                             token_string.push(c);
-                            tokens.push(Token::new(Tt::ListBegin, token_string, i));
+                            tokens.push(Token::new(Tt::ListBegin, token_string, i, ti));
                             token_string = String::new();
                             i += 1;
+                            ti += 1;
                         }
                         ',' => {
                             token_string.push(c);
-                            tokens.push(Token::new(Tt::ListSep, token_string, i));
+                            tokens.push(Token::new(Tt::ListSep, token_string, i, ti));
                             token_string = String::new();
                             i += 1;
+                            ti += 1;
                         }
                         ']' => {
                             token_string.push(c);
-                            tokens.push(Token::new(Tt::ListEnd, token_string, i));
+                            tokens.push(Token::new(Tt::ListEnd, token_string, i, ti));
                             token_string = String::new();
                             i += 1;
+                            ti += 1;
                         }
                         '"' => {
                             // token_string.push(c);
@@ -177,10 +196,11 @@ pub mod lex {
                     let tok_str = &token_string[..];
                     match tok_str {
                         "true" | "false" => {
-                            tokens.push(Token::new(Tt::Literal(Lt::Bool), token_string, i));
+                            tokens.push(Token::new(Tt::Literal(Lt::Bool), token_string, i, ti));
                             token_string = String::new();
                             current_state = LexerState::Begin;
                             i += 1;
+                            ti += 1;
                         }
                         &_ => match c {
                             c if c.is_whitespace() => {
@@ -206,14 +226,16 @@ pub mod lex {
                 },
                 LexerState::InInstruction => match c {
                     c if c.is_whitespace() => {
-                        tokens.push(Token::new(Tt::Instruction, token_string, i));
+                        tokens.push(Token::new(Tt::Instruction, token_string, i, ti));
                         token_string = String::new();
+                        ti += 1;
                         current_state = LexerState::Begin;
                     }
                     '!' | '{' | '}' | '[' | ']' | '"' => {
-                        tokens.push(Token::new(Tt::Instruction, token_string, i));
+                        tokens.push(Token::new(Tt::Instruction, token_string, i, ti));
                         token_string = String::new();
                         current_state = LexerState::Begin;
+                        ti += 1;
                     }
                     _ => {
                         token_string.push(c);
@@ -222,10 +244,11 @@ pub mod lex {
                 },
                 LexerState::InString => match c {
                     '"' => {
-                        tokens.push(Token::new(Tt::Literal(Lt::String), token_string, i));
+                        tokens.push(Token::new(Tt::Literal(Lt::String), token_string, i, ti));
                         token_string = String::new();
                         current_state = LexerState::Begin;
                         i += 1;
+                        ti += 1;
                     }
                     _ => {
                         token_string.push(c);
@@ -234,10 +257,11 @@ pub mod lex {
                 },
                 LexerState::InChar => match c {
                     '\'' => {
-                        tokens.push(Token::new(Tt::Literal(Lt::Char), token_string, i));
+                        tokens.push(Token::new(Tt::Literal(Lt::Char), token_string, i, ti));
                         token_string = String::new();
                         current_state = LexerState::Begin;
                         i += 1;
+                        ti += 1;
                     }
                     _ => {
                         token_string.push(c);
@@ -246,14 +270,16 @@ pub mod lex {
                 },
                 LexerState::InNumber => match c {
                     c if c.is_whitespace() => {
-                        tokens.push(Token::new(Tt::Literal(Lt::Int), token_string, i));
+                        tokens.push(Token::new(Tt::Literal(Lt::Int), token_string, i, ti));
                         token_string = String::new();
                         current_state = LexerState::Begin;
+                        ti += 1;
                     }
                     '!' | '{' | '}' | '[' | ']' | '"' | ',' => {
-                        tokens.push(Token::new(Tt::Literal(Lt::Int), token_string, i));
+                        tokens.push(Token::new(Tt::Literal(Lt::Int), token_string, i, ti));
                         token_string = String::new();
                         current_state = LexerState::Begin;
+                        ti += 1;
                     }
                     '.' => {
                         current_state = LexerState::InFloat;
@@ -267,14 +293,16 @@ pub mod lex {
                 },
                 LexerState::InFloat => match c {
                     c if c.is_whitespace() => {
-                        tokens.push(Token::new(Tt::Literal(Lt::Float), token_string, i));
+                        tokens.push(Token::new(Tt::Literal(Lt::Float), token_string, i, ti));
                         token_string = String::new();
                         current_state = LexerState::Begin;
+                        ti += 1;
                     }
                     '!' | '{' | '}' | '[' | ']' | '"' | ',' => {
-                        tokens.push(Token::new(Tt::Literal(Lt::Float), token_string, i));
+                        tokens.push(Token::new(Tt::Literal(Lt::Float), token_string, i, ti));
                         token_string = String::new();
                         current_state = LexerState::Begin;
+                        ti += 1;
                     }
                     _ => {
                         token_string.push(c);
@@ -283,7 +311,7 @@ pub mod lex {
                 },
             }
         }
-        tokens.push(Token::new(Tt::End, "".to_string(), i));
+        tokens.push(Token::new(Tt::End, "".to_string(), i, ti));
         tokens
     }
 }

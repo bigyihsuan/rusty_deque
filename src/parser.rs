@@ -28,204 +28,313 @@ pub mod ast {
     }
 
     pub type List = Vec<Box<Literal>>;
-    pub type Block = Code;
-}
 
-pub mod visit {
-    // https://rust-unofficial.github.io/patterns/patterns/behavioural/visitor.html
-    // https://github.com/rust-unofficial/patterns/discussions/236
-    use super::ast::*;
-
-    pub trait Visitor<T> {
-        fn visit_code(&mut self, c: &Code) -> T;
-        fn visit_exec(&mut self, e: &Exec) -> T;
-        fn visit_op(&mut self, o: &Op) -> T;
-        fn visit_instruction(&mut self, i: &Instruction) -> T;
-        fn visit_literal(&mut self, l: &Literal) -> T;
+    #[derive(Debug)]
+    pub enum BlockElement {
+        Block(Block),
+        Exec(Box<Exec>),
     }
-
-    pub struct TreePrinter {
-        pub indent: usize,
-    }
-    impl TreePrinter {
-        fn new() -> TreePrinter {
-            TreePrinter { indent: 0 }
-        }
-    }
-
-    impl Visitor<String> for TreePrinter {
-        fn visit_code(&mut self, c: &Code) -> String {
-            let mut s: String = String::from("( \n");
-            self.indent += 1;
-            for e in &*c {
-                for _ in 0..self.indent {
-                    s += "    "
-                }
-                s += &String::from(format!("{}\n", self.visit_exec(&e)));
-            }
-            self.indent -= 1;
-            for _ in 0..self.indent {
-                s += "    "
-            }
-            s += "\n)";
-            s
-        }
-        fn visit_exec(&mut self, e: &Exec) -> String {
-            match &*e {
-                Exec::Left(o) => String::from(format!("!{} ", &self.visit_op(&o))),
-                Exec::Right(o) => String::from(format!("{}! ", &self.visit_op(&o))),
-            }
-        }
-        fn visit_op(&mut self, o: &Op) -> String {
-            match &*o {
-                Op::Instruction(i) => self.visit_instruction(&i),
-                Op::Literal(l) => self.visit_literal(&l),
-            }
-        }
-        fn visit_instruction(&mut self, i: &Instruction) -> String {
-            String::from(&i.value)
-        }
-        fn visit_literal(&mut self, l: &Literal) -> String {
-            match &*l {
-                Literal::Integer(i) => i.to_string(),
-                Literal::Float(f) => f.to_string(),
-                Literal::Boolean(b) => b.to_string(),
-                Literal::Character(c) => format!("\'{}\'", c),
-                Literal::List(l) => {
-                    let mut s = String::from("[");
-                    for e in l {
-                        s += &String::from(format!("{}, ", &self.visit_literal(&*e)));
-                    }
-                    s.push(']');
-                    s
-                }
-                Literal::Block(b) => {
-                    let mut s = String::from("{\n");
-                    self.indent += 1;
-                    for e in b {
-                        for _ in 0..self.indent {
-                            s += "    "
-                        }
-                        s += &String::from(format!("{}\n", &self.visit_exec(&e)));
-                    }
-                    self.indent -= 1;
-                    for _ in 0..self.indent {
-                        s += "    "
-                    }
-                    s += "}";
-                    s
-                }
-            }
-        }
-    }
+    pub type Block = Vec<BlockElement>;
 }
 
 pub mod par {
     use std::usize;
 
-    use crate::lexer::tok;
-    use crate::parser::ast;
+    use crate::lexer::tok::*;
+    use crate::parser::ast::*;
 
-    type Token = tok::Token;
-
-    enum ParseState {
-        Begin,
-        InOp,
-        InOpFromBang,
-        InOpLeft,
-        InOpRight,
-        InBlockLeft,
-        InBlockRight,
-        InListLeft,
-        InListRight,
-        End,
-        Error(String),
+    pub fn parse_tokens(tokens: Vec<Token>) -> Code {
+        let mut rp = RecursiveParser {
+            token_list: tokens,
+            current_index: 0,
+        };
+        rp.code()
     }
-    pub fn parse_tokens(tokens: &Vec<Token>) -> ast::Code {
-        ast::Code::new()
-    }
-    // pub fn parse(tokens: Vec<Token>) -> ast::Code {
-    //     type TokenType = tok::TokenType;
-    //     let mut code = ast::Code::new();
-    //     let mut parser_state = ParseState::Begin;
-    //     let default_token = tok::Token {
-    //         token_type: TokenType::End,
-    //         string: "".to_string(),
-    //         index: usize::MAX,
-    //     };
 
-    //     let i = 0;
-    //     while i < (&tokens).len() {
-    //         let current_token = match (&tokens).get(i) {
-    //             Some(c) => c,
-    //             None => &default_token,
-    //         };
-    //         match parser_state {
-    //             ParseState::Begin => match current_token.token_type {
-    //                 TokenType::BlockBegin => {
-    //                     parser_state = ParseState::InBlockLeft;
-    //                 }
-    //                 TokenType::BlockEnd => {
-    //                     parser_state = ParseState::Error(
-    //                         format!("ParseBegin @ {}: BlockEnd before any BlockBegin", i)
-    //                             .to_string(),
-    //                     );
-    //                 }
-    //                 TokenType::ListBegin => {
-    //                     parser_state = ParseState::InListLeft;
-    //                 }
-    //                 TokenType::ListSep => {
-    //                     parser_state = ParseState::Error(
-    //                         format!("ParseBegin @ {}: ListSep outside of list", i).to_string(),
-    //                     );
-    //                 }
-    //                 TokenType::ListEnd => {
-    //                     parser_state = ParseState::Error(
-    //                         format!("ParseBegin @ {}: ListEnd before any ListBegin", i).to_string(),
-    //                     );
-    //                 }
-    //                 TokenType::Instruction => {
-    //                     parser_state = ParseState::InOp;
-    //                 }
-    //                 TokenType::Literal(_) => {
-    //                     parser_state = ParseState::InOp;
-    //                 }
-    //                 TokenType::Bang => {
-    //                     parser_state = ParseState::InOpFromBang;
-    //                 }
-    //                 TokenType::End => {
-    //                     if current_token.index == usize::MAX {
-    //                         parser_state = ParseState::Error(
-    //                             format!("ParseBegin @ {}: out of tokens", i).to_string(),
-    //                         );
-    //                     } else {
-    //                         parser_state = ParseState::End;
-    //                     }
-    //                 }
-    //             },
-    //             ParseState::InOp => match current_token.token_type {
-    //                 TokenType::Literal(_) => {
-    //                     code.push(Box::new(ast::Exec::new(&tokens)));
-    //                 }
-    //                 TokenType::Instruction => {}
-    //                 _ => {}
-    //             },
-    //             ParseState::InOpFromBang => {}
-    //             ParseState::InOpLeft => {}
-    //             ParseState::InOpRight => {}
-    //             ParseState::InBlockLeft => {}
-    //             ParseState::InBlockRight => {}
-    //             ParseState::InListLeft => {}
-    //             ParseState::InListRight => {}
-    //             ParseState::End => {
-    //                 break;
-    //             }
-    //             ParseState::Error(s) => {
-    //                 println!("{}", s);
-    //                 break;
-    //             }
-    //         }
-    //     }
-    //     code
-    // }
+    struct RecursiveParser {
+        token_list: Vec<Token>,
+        current_index: usize,
+    }
+
+    // https://craftinginterpreters.com/parsing-expressions.html
+    impl RecursiveParser {
+        // recursive parsing functions
+        /* terminals:
+         * Instruction
+         * Int
+         * Float
+         * Bool
+         * Char
+         */
+        pub fn code(&mut self) -> Code {
+            // non-terminal
+            let mut code: Code = Vec::new();
+            while !self.match_tts(vec![TokenType::End]) {
+                println!(
+                    "code {:?} {} @ {}",
+                    self.peek().token_type,
+                    self.peek().string,
+                    self.peek().tok_index
+                );
+                if let TokenType::End = self.peek().token_type {
+                    break;
+                }
+                code.push(self.exec());
+            }
+            code
+        }
+
+        pub fn exec(&mut self) -> Exec {
+            // non-terminal
+            println!(
+                "exec before {:?} {} @ {}",
+                self.peek().token_type,
+                self.peek().string,
+                self.peek().tok_index
+            );
+            match self.peek().token_type {
+                TokenType::Bang => {
+                    // bang == left exec, advance then return
+                    println!(
+                        "exec left {:?} {} @ {}",
+                        self.peek().token_type,
+                        self.peek().string,
+                        self.peek().tok_index
+                    );
+                    self.advance();
+                    Exec::Left(self.op())
+                }
+                _ => {
+                    println!(
+                        "exec right {:?} {} @ {}",
+                        self.peek().token_type,
+                        self.peek().string,
+                        self.peek().tok_index
+                    );
+                    // no bang == right exec, advance to get the op, then advance past bang
+                    let o = Exec::Right(self.op());
+                    self.advance();
+                    o
+                }
+            }
+        }
+
+        pub fn op(&mut self) -> Op {
+            println!(
+                "op before {:?} {} @ {}",
+                self.peek().token_type,
+                self.peek().string,
+                self.peek().tok_index
+            );
+            // non-terminal
+            match self.peek().token_type {
+                TokenType::Instruction => {
+                    println!(
+                        "op inst {:?} {} @ {}",
+                        self.peek().token_type,
+                        self.peek().string,
+                        self.peek().tok_index
+                    );
+                    Op::Instruction(self.instruction())
+                }
+                _ => {
+                    println!(
+                        "op lit {:?} {} @ {}",
+                        self.peek().token_type,
+                        self.peek().string,
+                        self.peek().tok_index
+                    );
+                    Op::Literal(self.literal())
+                }
+            }
+        }
+
+        pub fn instruction(&mut self) -> Instruction {
+            // terminal
+            println!(
+                "inst {:?} {} @ {}",
+                self.peek().token_type,
+                self.peek().string,
+                self.peek().tok_index
+            );
+            let i = Instruction {
+                value: self.peek().string.to_string(),
+            };
+            self.advance();
+            i
+        }
+
+        pub fn literal(&mut self) -> Literal {
+            // List, Block: non-terminal
+            // all else: terminal
+            println!(
+                "lit {:?} {} @ {}",
+                self.peek().token_type,
+                self.peek().string,
+                self.peek().tok_index
+            );
+            let tok = self.peek();
+            match &tok.token_type {
+                TokenType::Literal(lt) => match lt {
+                    LiteralType::Int => Literal::Integer(tok.string.parse().unwrap()),
+                    LiteralType::Float => Literal::Float(tok.string.parse().unwrap()),
+                    LiteralType::Bool => Literal::Boolean(tok.string.parse().unwrap()),
+                    LiteralType::Char => Literal::Character(tok.string.parse().unwrap()),
+                    LiteralType::String => {
+                        let chars: Vec<Box<Literal>> = tok
+                            .string
+                            .chars()
+                            .map(|c| Box::new(Literal::Character(c)))
+                            .collect();
+                        Literal::List(chars)
+                    }
+                },
+                TokenType::ListBegin => Literal::List(self.list()),
+                TokenType::BlockBegin => Literal::Block(self.block()),
+                _ => {
+                    panic!(
+                        "Literal: expected literal, found {:?} @ {}",
+                        tok.token_type, tok.tok_index
+                    )
+                }
+            }
+        }
+
+        pub fn list(&mut self) -> List {
+            // non-terminal
+            // [ element , ... ]
+            println!(
+                "list {:?} {} @ {}",
+                self.peek().token_type,
+                self.peek().string,
+                self.peek().tok_index
+            );
+            let mut list_stack: Vec<usize> = Vec::new();
+            list_stack.push(self.peek().tok_index);
+            println!("  stack: {:?}", list_stack);
+
+            let mut list: Vec<Box<Literal>> = Vec::new();
+            &mut self.advance(); // skip list start
+
+            while list_stack.len() > 0 {
+                // literal, then list sep
+                match self.peek().token_type {
+                    TokenType::ListBegin => {
+                        list_stack.push(self.peek().tok_index);
+                    }
+                    TokenType::ListEnd => {
+                        list_stack.pop();
+                    }
+                    TokenType::ListSep => {}
+                    TokenType::Literal(_) => {
+                        list.push(Box::new(self.literal()));
+                    }
+                    _ => {
+                        break;
+                    }
+                }
+                &mut self.advance();
+                println!("  stack: {:?}\n  list:  {:?}", list_stack, list);
+            }
+            // &mut self.advance(); // skip list end
+            println!("  stack: {:?}\n  list:  {:?}", list_stack, list);
+            list
+        }
+
+        pub fn block(&mut self) -> Block {
+            // { code }
+            println!(
+                "block {:?} {} @ {}",
+                self.peek().token_type,
+                self.peek().string,
+                self.peek().tok_index
+            );
+
+            let mut block_code = Block::new();
+            let mut block_stack: Vec<Block> = Vec::new();
+
+            loop {
+                println!(
+                    "block making {:?} {} @ {}",
+                    self.peek().token_type,
+                    self.peek().string,
+                    self.peek().tok_index
+                );
+                println!("stack before {:?}", block_stack);
+                match self.peek().token_type {
+                    TokenType::BlockBegin => {
+                        block_stack.push(Block::new());
+                        self.advance();
+                    }
+                    TokenType::BlockEnd => {
+                        let current_block = block_stack.pop().unwrap();
+                        if block_stack.len() > 0 {
+                            block_code.push(BlockElement::Block(current_block));
+                        }
+                    }
+                    _ => {
+                        let mut current_block = block_stack.pop().unwrap();
+                        current_block.push(BlockElement::Exec(Box::new(self.exec())));
+                        block_stack.push(current_block);
+                    }
+                }
+                println!("stack after {:?}", block_stack);
+                println!("{:?}", block_code);
+
+                if block_stack.len() == 0 {
+                    break;
+                }
+            }
+
+            block_code
+        }
+
+        // utility functions
+        fn advance(&mut self) -> &Token {
+            // goes to the next token, then returns the previous one
+            if !self.is_at_end() {
+                self.current_index += 1;
+            }
+            self.previous()
+        }
+
+        // advances if it matches any
+        fn match_tts(&mut self, token_types: Vec<TokenType>) -> bool {
+            for tt in token_types {
+                if self.check_tt(tt) {
+                    &self.advance();
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        fn check_tt(&self, token_type: TokenType) -> bool {
+            if self.is_at_end() {
+                return false;
+            }
+            return self.peek().token_type == token_type;
+        }
+
+        fn is_at_end(&self) -> bool {
+            match self.peek().token_type {
+                TokenType::End => true,
+                _ => false,
+            }
+        }
+
+        fn peek(&self) -> &Token {
+            match self.token_list.get(self.current_index) {
+                Some(t) => t,
+                None => panic!(),
+            }
+        }
+
+        fn previous(&self) -> &Token {
+            match self.token_list.get(self.current_index - 1) {
+                Some(t) => t,
+                None => panic!(),
+            }
+        }
+    }
 }

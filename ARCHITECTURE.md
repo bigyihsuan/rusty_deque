@@ -32,3 +32,7 @@ Contains 2 modules:
 * `par`: Parses a list of tokens into an AST.
 
 # Evaluator
+Contains 2 modules:
+
+* `visit`: Defines the `Visitor` trait to traverse the AST.
+* `tree_print`: a test visitor for debugging.
