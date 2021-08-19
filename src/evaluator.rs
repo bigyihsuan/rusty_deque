@@ -82,10 +82,10 @@ pub mod tree_print {
                     s += "    "
                 }
                 match be {
-                    BlockElement::Exec(e) => {
+                    BlockElement::EleExec(e) => {
                         s += &String::from(format!("{}\n", &self.visit_exec(&e)));
                     }
-                    BlockElement::Block(bl) => {
+                    BlockElement::EleBlock(bl) => {
                         s += &String::from(format!("{}\n", &self.visit_block(&bl)));
                     }
                 }

@@ -1,23 +1,23 @@
-Code: {{!a b! !c}! !{d! !e f!}}!
+Code: {{a! b! c!}! {d! e! f!}!}!
 BlockBegin { @ 0
 BlockBegin { @ 1
-Bang ! @ 2
-Instruction a @ 3
+Instruction a @ 2
+Bang ! @ 3
 Instruction b @ 4
 Bang ! @ 5
-Bang ! @ 6
-Instruction c @ 7
+Instruction c @ 6
+Bang ! @ 7
 BlockEnd } @ 8
 Bang ! @ 9
-Bang ! @ 10
-BlockBegin { @ 11
-Instruction d @ 12
-Bang ! @ 13
+BlockBegin { @ 10
+Instruction d @ 11
+Bang ! @ 12
+Instruction e @ 13
 Bang ! @ 14
-Instruction e @ 15
-Instruction f @ 16
-Bang ! @ 17
-BlockEnd } @ 18
+Instruction f @ 15
+Bang ! @ 16
+BlockEnd } @ 17
+Bang ! @ 18
 BlockEnd } @ 19
 Bang ! @ 20
 End  @ 21
@@ -28,52 +28,81 @@ op before BlockBegin { @ 0
 op lit BlockBegin { @ 0
 lit BlockBegin { @ 0
 block BlockBegin { @ 0
-block making BlockBegin { @ 0
-stack before []
-stack after [[]]
 []
-block making BlockBegin { @ 1
-stack before [[]]
-stack after [[], []]
 []
-block making Bang ! @ 2
-stack before [[], []]
-exec before Bang ! @ 2
-exec left Bang ! @ 2
-op before Instruction a @ 3
-op inst Instruction a @ 3
-inst Instruction a @ 3
-stack after [[], [Exec(Left(Instruction(Instruction { value: "a" })))]]
+[[]]
 []
-block making Instruction b @ 4
-stack before [[], [Exec(Left(Instruction(Instruction { value: "a" })))]]
+[[], []]
+[]
+adding new exec
+exec before Instruction a @ 2
+exec right Instruction a @ 2
+op before Instruction a @ 2
+op inst Instruction a @ 2
+inst Instruction a @ 2
+[[], [EleExec(Right(Instruction(Instruction { value: "a" })))]]
+[]
+adding new exec
 exec before Instruction b @ 4
 exec right Instruction b @ 4
 op before Instruction b @ 4
 op inst Instruction b @ 4
 inst Instruction b @ 4
-stack after [[], [Exec(Left(Instruction(Instruction { value: "a" }))), Exec(Right(Instruction(Instruction { value: "b" })))]]
+[[], [EleExec(Right(Instruction(Instruction { value: "a" }))), EleExec(Right(Instruction(Instruction { value: "b" })))]]
 []
-block making Bang ! @ 6
-stack before [[], [Exec(Left(Instruction(Instruction { value: "a" }))), Exec(Right(Instruction(Instruction { value: "b" })))]]
-exec before Bang ! @ 6
-exec left Bang ! @ 6
-op before Instruction c @ 7
-op inst Instruction c @ 7
-inst Instruction c @ 7
-stack after [[], [Exec(Left(Instruction(Instruction { value: "a" }))), Exec(Right(Instruction(Instruction { value: "b" }))), Exec(Left(Instruction(Instruction { value: "c" })))]]
+adding new exec
+exec before Instruction c @ 6
+exec right Instruction c @ 6
+op before Instruction c @ 6
+op inst Instruction c @ 6
+inst Instruction c @ 6
+[[], [EleExec(Right(Instruction(Instruction { value: "a" }))), EleExec(Right(Instruction(Instruction { value: "b" }))), EleExec(Right(Instruction(Instruction { value: "c" })))]]
 []
-block making BlockEnd } @ 8
-stack before [[], [Exec(Left(Instruction(Instruction { value: "a" }))), Exec(Right(Instruction(Instruction { value: "b" }))), Exec(Left(Instruction(Instruction { value: "c" })))]]
-stack after [[]]
-[Block([Exec(Left(Instruction(Instruction { value: "a" }))), Exec(Right(Instruction(Instruction { value: "b" }))), Exec(Left(Instruction(Instruction { value: "c" })))])]
-block making BlockEnd } @ 8
-stack before [[]]
-stack after []
-[Block([Exec(Left(Instruction(Instruction { value: "a" }))), Exec(Right(Instruction(Instruction { value: "b" }))), Exec(Left(Instruction(Instruction { value: "c" })))])]
-code Bang ! @ 9
+nested block
+[[EleBlock([EleExec(Right(Instruction(Instruction { value: "a" }))), EleExec(Right(Instruction(Instruction { value: "b" }))), EleExec(Right(Instruction(Instruction { value: "c" })))])]]
+[]
+adding new exec
 exec before Bang ! @ 9
 exec left Bang ! @ 9
-op before Bang ! @ 10
-op lit Bang ! @ 10
-lit Bang ! @ 10
+op before BlockBegin { @ 10
+op lit BlockBegin { @ 10
+lit BlockBegin { @ 10
+block BlockBegin { @ 10
+[]
+[]
+[[]]
+[]
+adding new exec
+exec before Instruction d @ 11
+exec right Instruction d @ 11
+op before Instruction d @ 11
+op inst Instruction d @ 11
+inst Instruction d @ 11
+[[EleExec(Right(Instruction(Instruction { value: "d" })))]]
+[]
+adding new exec
+exec before Instruction e @ 13
+exec right Instruction e @ 13
+op before Instruction e @ 13
+op inst Instruction e @ 13
+inst Instruction e @ 13
+[[EleExec(Right(Instruction(Instruction { value: "d" }))), EleExec(Right(Instruction(Instruction { value: "e" })))]]
+[]
+adding new exec
+exec before Instruction f @ 15
+exec right Instruction f @ 15
+op before Instruction f @ 15
+op inst Instruction f @ 15
+inst Instruction f @ 15
+[[EleExec(Right(Instruction(Instruction { value: "d" }))), EleExec(Right(Instruction(Instruction { value: "e" }))), EleExec(Right(Instruction(Instruction { value: "f" })))]]
+[]
+end of current block
+block return [EleExec(Right(Instruction(Instruction { value: "d" }))), EleExec(Right(Instruction(Instruction { value: "e" }))), EleExec(Right(Instruction(Instruction { value: "f" })))]
+[[EleBlock([EleExec(Right(Instruction(Instruction { value: "a" }))), EleExec(Right(Instruction(Instruction { value: "b" }))), EleExec(Right(Instruction(Instruction { value: "c" })))]), EleExec(Left(Literal(Block([EleExec(Right(Instruction(Instruction { value: "d" }))), EleExec(Right(Instruction(Instruction { value: "e" }))), EleExec(Right(Instruction(Instruction { value: "f" })))]))))]]
+[]
+adding new exec
+exec before Bang ! @ 18
+exec left Bang ! @ 18
+op before BlockEnd } @ 19
+op lit BlockEnd } @ 19
+lit BlockEnd } @ 19

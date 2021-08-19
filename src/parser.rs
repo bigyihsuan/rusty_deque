@@ -31,8 +31,8 @@ pub mod ast {
 
     #[derive(Debug)]
     pub enum BlockElement {
-        Block(Block),
-        Exec(Box<Exec>),
+        EleBlock(Block),
+        EleExec(Box<Exec>),
     }
     pub type Block = Vec<BlockElement>;
 }
@@ -102,7 +102,8 @@ pub mod par {
                         self.peek().tok_index
                     );
                     self.advance();
-                    Exec::Left(self.op())
+                    let o = Exec::Left(self.op());
+                    o
                 }
                 _ => {
                     println!(
@@ -160,7 +161,6 @@ pub mod par {
             let i = Instruction {
                 value: self.peek().string.to_string(),
             };
-            self.advance();
             i
         }
 
@@ -254,38 +254,38 @@ pub mod par {
             let mut block_stack: Vec<Block> = Vec::new();
 
             loop {
-                println!(
-                    "block making {:?} {} @ {}",
-                    self.peek().token_type,
-                    self.peek().string,
-                    self.peek().tok_index
-                );
-                println!("stack before {:?}", block_stack);
+                println!("{:?}\n{:?}", block_stack, block_code);
                 match self.peek().token_type {
                     TokenType::BlockBegin => {
                         block_stack.push(Block::new());
                         self.advance();
                     }
                     TokenType::BlockEnd => {
-                        let current_block = block_stack.pop().unwrap();
-                        if block_stack.len() > 0 {
-                            block_code.push(BlockElement::Block(current_block));
+                        let mut current_block = block_stack.pop().unwrap();
+                        if block_stack.len() == 0 {
+                            // current block has just ended
+                            println!("end of current block");
+                            block_code.append(&mut current_block);
+                            break;
+                        } else {
+                            // current block is nested in an outer block
+                            println!("nested block");
+                            let mut outer_block = block_stack.pop().unwrap();
+                            outer_block.push(BlockElement::EleBlock(current_block));
+                            block_stack.push(outer_block);
+                            self.advance();
                         }
                     }
                     _ => {
+                        println!("adding new exec");
                         let mut current_block = block_stack.pop().unwrap();
-                        current_block.push(BlockElement::Exec(Box::new(self.exec())));
+                        current_block.push(BlockElement::EleExec(Box::new(self.exec())));
                         block_stack.push(current_block);
+                        self.advance();
                     }
                 }
-                println!("stack after {:?}", block_stack);
-                println!("{:?}", block_code);
-
-                if block_stack.len() == 0 {
-                    break;
-                }
             }
-
+            println!("block return {:?}", block_code);
             block_code
         }
 
