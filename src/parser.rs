@@ -115,6 +115,7 @@ pub mod par {
                     // no bang == right exec, advance to get the op, then advance past bang
                     let o = Exec::Right(self.op());
                     self.advance();
+                    self.advance();
                     o
                 }
             }

@@ -9,10 +9,11 @@ fn main() {
     */
 
     // let code = "{ alpha! !{ beta! } delta! }!";
-    // let code = "![1, 2, 0.3, [4, '5', \"six\", 7.8,], 9,] ol!";
+    let code = "![1, 2, 0.3, [4, '5', \"six\", 7.8,], 9,] ol!";
     // let code = "!a !b !c d! e! f!";
     // let code = "{{!a b! !c}! !{d! !e f!}}!";
-    let code = "{{a! b! c!}! {d! e! f!}!}!";
+    // let code = "{{a! b! c!}! {d! e! f!}!}!";
+
     let mut c = String::from(code);
     c.push(' ');
     let tokens = lexer::lex::tokenize(c);
