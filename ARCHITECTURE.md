@@ -6,7 +6,9 @@ The grammar of this language is as follows in this EBNF:
 
 ```
 Code = Exec*
-Exec = '!' Op | Op '!'
+Exec = ExecLeft | ExecRight
+ExecLeft = Op '!'
+ExecRight = Op '~'
 Op = Literal | Instruction
 Instruction = some instruction
 Literal = Int | Float | Bool | Char | String | List | Block

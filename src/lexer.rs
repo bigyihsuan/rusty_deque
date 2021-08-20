@@ -9,6 +9,7 @@ pub mod tok {
         Instruction,
         Literal(LiteralType),
         Bang,
+        Tilde,
         End,
     }
     #[derive(Debug, PartialEq)]
@@ -90,6 +91,7 @@ pub mod lex {
                     // possible characters encountered:
                     // # => comment
                     // ! => bang
+                    // ~ => tilde
                     // { => block start
                     // } => block end
                     // [ => list start
@@ -110,6 +112,13 @@ pub mod lex {
                         '!' => {
                             token_string.push(c);
                             tokens.push(Token::new(Tt::Bang, token_string, i, ti));
+                            token_string = String::new();
+                            i += 1;
+                            ti += 1;
+                        }
+                        '~' => {
+                            token_string.push(c);
+                            tokens.push(Token::new(Tt::Tilde, token_string, i, ti));
                             token_string = String::new();
                             i += 1;
                             ti += 1;
@@ -206,7 +215,7 @@ pub mod lex {
                             c if c.is_whitespace() => {
                                 current_state = LexerState::InInstruction;
                             }
-                            '!' | '{' | '}' | '[' | ']' | '"' => {
+                            '!' | '~' | '{' | '}' | '[' | ']' | '"' => {
                                 current_state = LexerState::InInstruction;
                             }
                             _ => {
@@ -231,7 +240,7 @@ pub mod lex {
                         ti += 1;
                         current_state = LexerState::Begin;
                     }
-                    '!' | '{' | '}' | '[' | ']' | '"' => {
+                    '!' | '~' | '{' | '}' | '[' | ']' | '"' => {
                         tokens.push(Token::new(Tt::Instruction, token_string, i, ti));
                         token_string = String::new();
                         current_state = LexerState::Begin;
@@ -275,7 +284,7 @@ pub mod lex {
                         current_state = LexerState::Begin;
                         ti += 1;
                     }
-                    '!' | '{' | '}' | '[' | ']' | '"' | ',' => {
+                    '!' | '~' | '{' | '}' | '[' | ']' | '"' | ',' => {
                         tokens.push(Token::new(Tt::Literal(Lt::Int), token_string, i, ti));
                         token_string = String::new();
                         current_state = LexerState::Begin;
@@ -298,7 +307,7 @@ pub mod lex {
                         current_state = LexerState::Begin;
                         ti += 1;
                     }
-                    '!' | '{' | '}' | '[' | ']' | '"' | ',' => {
+                    '!' | '~' | '{' | '}' | '[' | ']' | '"' | ',' => {
                         tokens.push(Token::new(Tt::Literal(Lt::Float), token_string, i, ti));
                         token_string = String::new();
                         current_state = LexerState::Begin;

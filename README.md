@@ -11,19 +11,19 @@ Inspired by [this Esolangs page](https://esolangs.org/wiki/Deque) and [this Conc
 # Examples
 
 ### Hello World
-```c
-!"Hello World!" !ow
+```bash
+"Hello World!"~ ow~
 ```
 
 ### Cat
-```c
-!{!ia !ol} loop!
+```bash
+{ia~ ol~}~ loop~
 ```
 
 ### Factorial
-```c
-# given an int n (n -- n!)
-!{!dup !2 !rot <!} !rot {pop! 1!}! {!dup !1 !- 2! -1! {!in !*}! !rot !for}! !rot !ite
+```bash
+# given an int n (n -- n~)
+{dup~ 2! rot~ <!}~ rot~ {pop! 1!}! {dup~ 1~ -~ 2! -1! {in~ *!}! rot~ for~}! rot~ ite~
 ```
 
 # Types
@@ -73,14 +73,15 @@ Comments start with a hash mark `#` and end at the end of the line.
 
 ```bash
 # this is a comment
-1! !2 !+ # comment after some code
+1! 2~ +! # comment after some code
 ```
 
-# Appending Operator `!`
+# Appending Sigils `~` and `!`
 
-Instructions and literals are either prepended or postpended by a bang `!`.
-If prepended, instructions and literals push and pop from the front (left).
-If postpended, instructions and literals push and pop from the back (right).
+All instructions and literals are either postpended by an appending sigil, which differs based on which side of the deque the operation works on.
+A tilde `~` means that the operation works on the left of the deque.
+A bang `!` means that the operation works on the right of the deque.
+
 
 # Instructions
 
@@ -90,7 +91,7 @@ Instructions have the general philosophy of "discard if failed". If an instructi
 * (`push`: Handled by literals.)
 * `pop`/`$`: Discard one element.
 * `dup`/`:`: Duplicate one element.
-* `rot`/`@` : Rotate the deque one element towards a direction (either to the front/left `!rot` or the back/right `rot!`).
+* `rot`/`@` : Rotate the deque one element towards a direction (either to the front/left `rot~` or the back/right `rot!`).
 * `over`/`^` : Duplicate the element below the top/bottom element.
 
 ## Castings
@@ -100,7 +101,7 @@ These operations attempt to cast primitives to primitives. If the conversion fai
 * `toInt`: Pops 1 and pushes an int. Floats are truncated at the decimal point. Characters have their Rust `c as u32` value.
 * `toFloat`: Pops 1 and pushes a float. Characters have their Rust `c as u32` value.
 * `toChar`: Pops 1 and pushes a char. Uses Rust `std::char::to_char(v)`.
-* `toBool`: Pops 1 and pushes a bool. For ints and floats, this is `v != 0`. This is always `true` for chars. This is `true` for lists only when non-empty.
+* `toBool`: Pops 1 and pushes a bool. For ints and floats, this is `v ~= 0`. This is always `true` for chars. This is `true` for lists only when non-empty.
 
 ## `Int`/`Float` Operations
 

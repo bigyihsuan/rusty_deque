@@ -92,6 +92,10 @@ pub mod par {
                 self.peek().string,
                 self.peek().tok_index
             );
+            let op = self.op();
+            self.advance(); // go past op
+            self.advance(); // go onto the sigil
+
             match self.peek().token_type {
                 TokenType::Bang => {
                     // bang == left exec, advance then return
@@ -101,22 +105,27 @@ pub mod par {
                         self.peek().string,
                         self.peek().tok_index
                     );
+                    let exec = Exec::Left(op);
                     self.advance();
-                    let o = Exec::Left(self.op());
-                    o
+                    exec
                 }
-                _ => {
+                TokenType::Tilde => {
                     println!(
                         "exec right {:?} {} @ {}",
                         self.peek().token_type,
                         self.peek().string,
                         self.peek().tok_index
                     );
-                    // no bang == right exec, advance to get the op, then advance past bang
-                    let o = Exec::Right(self.op());
+                    let exec = Exec::Right(op);
                     self.advance();
-                    self.advance();
-                    o
+                    exec
+                }
+                _ => {
+                    panic!(
+                        "Exec: expected bang or tilde, found {:?} @ {}",
+                        self.peek().token_type,
+                        self.peek().tok_index
+                    )
                 }
             }
         }
