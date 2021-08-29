@@ -21,6 +21,9 @@ String = '"' characters '"'
 List = '[' (Literal ',')* ']'
 ```
 
+# Main
+Contains the `main()` entry point, as well as a single `repl` module, implementing a REPL.
+
 # Lexer
 Contains 2 modules:
 

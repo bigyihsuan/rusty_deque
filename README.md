@@ -79,8 +79,8 @@ Comments start with a hash mark `#` and end at the end of the line.
 # Appending Sigils `~` and `!`
 
 All instructions and literals are either postpended by an appending sigil, which differs based on which side of the deque the operation works on.
-A tilde `~` means that the operation works on the left of the deque.
-A bang `!` means that the operation works on the right of the deque.
+A bang `!` means that the operation works on the left of the deque.
+A tilde `~` means that the operation works on the right of the deque.
 
 
 # Instructions

@@ -3,13 +3,22 @@ pub mod visit {
     // https://github.com/rust-unofficial/patterns/discussions/236
     use crate::parser::ast::*;
 
-    pub trait Visitor<T> {
-        fn visit_code(&mut self, c: &Code) -> T;
-        fn visit_exec(&mut self, e: &Exec) -> T;
-        fn visit_op(&mut self, o: &Op) -> T;
-        fn visit_instruction(&mut self, i: &Instruction) -> T;
-        fn visit_literal(&mut self, l: &Literal) -> T;
-        fn visit_block(&mut self, b: &Block) -> T;
+    pub trait VisitorPrint<T> {
+        fn visit_code(&mut self, c: Code) -> T;
+        fn visit_exec(&mut self, e: Exec) -> T;
+        fn visit_op(&mut self, o: Op) -> T;
+        fn visit_instruction(&mut self, i: Instruction) -> T;
+        fn visit_literal(&mut self, l: Literal) -> T;
+        fn visit_block(&mut self, b: Block) -> T;
+    }
+
+    pub trait VisitorRun<T> {
+        fn visit_code(&mut self, c: Code) -> ();
+        fn visit_exec(&mut self, e: Exec) -> T;
+        fn visit_op(&mut self, o: Op) -> T;
+        fn visit_instruction(&mut self, i: Instruction) -> T;
+        fn visit_literal(&mut self, l: Literal) -> T;
+        fn visit_block(&mut self, b: Block) -> T;
     }
 }
 pub mod tree_print {
@@ -25,15 +34,15 @@ pub mod tree_print {
         }
     }
 
-    impl Visitor<String> for TreePrinter {
-        fn visit_code(&mut self, c: &Code) -> String {
+    impl VisitorPrint<String> for TreePrinter {
+        fn visit_code(&mut self, c: Code) -> String {
             let mut s: String = String::from("( \n");
             self.indent += 1;
-            for e in &*c {
+            for e in c {
                 for _ in 0..self.indent {
                     s += "    "
                 }
-                s += &String::from(format!("{}\n", self.visit_exec(&e)));
+                s += &String::from(format!("{}\n", self.visit_exec(e)));
             }
             self.indent -= 1;
             for _ in 0..self.indent {
@@ -42,23 +51,23 @@ pub mod tree_print {
             s += "\n)";
             s
         }
-        fn visit_exec(&mut self, e: &Exec) -> String {
-            match &*e {
-                Exec::Left(o) => String::from(format!("!{} ", &self.visit_op(&o))),
-                Exec::Right(o) => String::from(format!("{}! ", &self.visit_op(&o))),
+        fn visit_exec(&mut self, e: Exec) -> String {
+            match e {
+                Exec::Left(o) => String::from(format!("{}! ", &self.visit_op(o))),
+                Exec::Right(o) => String::from(format!("{}~ ", &self.visit_op(o))),
             }
         }
-        fn visit_op(&mut self, o: &Op) -> String {
-            match &*o {
-                Op::Instruction(i) => self.visit_instruction(&i),
-                Op::Literal(l) => self.visit_literal(&l),
+        fn visit_op(&mut self, o: Op) -> String {
+            match o {
+                Op::Instruction(i) => self.visit_instruction(i),
+                Op::Literal(l) => self.visit_literal(l),
             }
         }
-        fn visit_instruction(&mut self, i: &Instruction) -> String {
+        fn visit_instruction(&mut self, i: Instruction) -> String {
             String::from(&i.value)
         }
-        fn visit_literal(&mut self, l: &Literal) -> String {
-            match &*l {
+        fn visit_literal(&mut self, l: Literal) -> String {
+            match l {
                 Literal::Integer(i) => i.to_string(),
                 Literal::Float(f) => f.to_string(),
                 Literal::Boolean(b) => b.to_string(),
@@ -66,29 +75,22 @@ pub mod tree_print {
                 Literal::List(l) => {
                     let mut s = String::from("[");
                     for e in l {
-                        s += &String::from(format!("{}, ", &self.visit_literal(&*e)));
+                        s += &String::from(format!("{}, ", &self.visit_literal(*e)));
                     }
                     s.push(']');
                     s
                 }
-                Literal::Block(b) => self.visit_block(&b),
+                Literal::Block(b) => self.visit_block(b),
             }
         }
-        fn visit_block(&mut self, b: &Block) -> String {
+        fn visit_block(&mut self, b: Block) -> String {
             let mut s = String::from("{\n");
             self.indent += 1;
             for be in b {
                 for _ in 0..self.indent {
                     s += "    "
                 }
-                match be {
-                    BlockElement::EleExec(e) => {
-                        s += &String::from(format!("{}\n", &self.visit_exec(&e)));
-                    }
-                    BlockElement::EleBlock(bl) => {
-                        s += &String::from(format!("{}\n", &self.visit_block(&bl)));
-                    }
-                }
+                s += &String::from(format!("{}\n", &self.visit_exec(*be)));
             }
             self.indent -= 1;
             for _ in 0..self.indent {
@@ -96,6 +98,69 @@ pub mod tree_print {
             }
             s += "}";
             s
+        }
+    }
+}
+
+pub mod tree_evaluator {
+    use super::visit::*;
+    use crate::parser::ast::*;
+
+    pub trait StackWrapper {
+        fn append_left(&mut self, s: StackElement);
+        fn append_right(&mut self, s: StackElement);
+    }
+
+    pub type StackElement = Literal;
+    pub type Evaluator = Vec<StackElement>;
+
+    impl StackWrapper for Evaluator {
+        fn append_left(&mut self, s: StackElement) {
+            self.insert(0, s);
+        }
+
+        fn append_right(&mut self, s: StackElement) {
+            self.push(s);
+        }
+    }
+
+    impl VisitorRun<StackElement> for Evaluator {
+        fn visit_code(&mut self, c: Code) -> () {
+            for exec in c {
+                match exec {
+                    Exec::Left(_) => {
+                        let e = self.visit_exec(exec);
+                        self.append_left(e);
+                    }
+                    Exec::Right(_) => {
+                        let e = self.visit_exec(exec);
+                        self.append_right(e);
+                    }
+                }
+            }
+        }
+        fn visit_exec(&mut self, e: Exec) -> StackElement {
+            match e {
+                Exec::Left(o) => self.visit_op(o),
+                Exec::Right(o) => self.visit_op(o),
+            }
+        }
+        fn visit_op(&mut self, o: Op) -> StackElement {
+            match o {
+                Op::Literal(l) => self.visit_literal(l),
+                Op::Instruction(i) => self.visit_instruction(i),
+            }
+        }
+        fn visit_instruction(&mut self, i: Instruction) -> StackElement {
+            // insert map of instructions here
+            unimplemented!()
+        }
+        fn visit_literal(&mut self, l: Literal) -> StackElement {
+            // return the visited literal
+            l
+        }
+        fn visit_block(&mut self, b: Block) -> StackElement {
+            unimplemented!()
         }
     }
 }

@@ -28,13 +28,7 @@ pub mod ast {
     }
 
     pub type List = Vec<Box<Literal>>;
-
-    #[derive(Debug)]
-    pub enum BlockElement {
-        EleBlock(Block),
-        EleExec(Box<Exec>),
-    }
-    pub type Block = Vec<BlockElement>;
+    pub type Block = Vec<Box<Exec>>;
 }
 
 pub mod par {
@@ -70,12 +64,12 @@ pub mod par {
             // non-terminal
             let mut code: Code = Vec::new();
             while !self.match_tts(vec![TokenType::End]) {
-                println!(
-                    "code {:?} {} @ {}",
-                    self.peek().token_type,
-                    self.peek().string,
-                    self.peek().tok_index
-                );
+                // println!(
+                //     "code {:?} {} @ {}",
+                //     self.peek().token_type,
+                //     self.peek().string,
+                //     self.peek().tok_index
+                // );
                 if let TokenType::End = self.peek().token_type {
                     break;
                 }
@@ -86,39 +80,76 @@ pub mod par {
 
         pub fn exec(&mut self) -> Exec {
             // non-terminal
-            println!(
-                "exec before {:?} {} @ {}",
-                self.peek().token_type,
-                self.peek().string,
-                self.peek().tok_index
-            );
+            // println!(
+            //     "exec before {:?} {} @ {}",
+            //     self.peek().token_type,
+            //     self.peek().string,
+            //     self.peek().tok_index
+            // );
             let op = self.op();
             self.advance(); // go past op
-            self.advance(); // go onto the sigil
 
+            // println!(
+            //     "exec before2 {:?} {} @ {}",
+            //     self.peek().token_type,
+            //     self.peek().string,
+            //     self.peek().tok_index
+            // );
             match self.peek().token_type {
                 TokenType::Bang => {
                     // bang == left exec, advance then return
-                    println!(
-                        "exec left {:?} {} @ {}",
-                        self.peek().token_type,
-                        self.peek().string,
-                        self.peek().tok_index
-                    );
+                    // println!(
+                    //     "exec left {:?} {} @ {}",
+                    //     self.peek().token_type,
+                    //     self.peek().string,
+                    //     self.peek().tok_index
+                    // );
                     let exec = Exec::Left(op);
                     self.advance();
                     exec
                 }
                 TokenType::Tilde => {
-                    println!(
-                        "exec right {:?} {} @ {}",
-                        self.peek().token_type,
-                        self.peek().string,
-                        self.peek().tok_index
-                    );
+                    // println!(
+                    //     "exec right {:?} {} @ {}",
+                    //     self.peek().token_type,
+                    //     self.peek().string,
+                    //     self.peek().tok_index
+                    // );
                     let exec = Exec::Right(op);
                     self.advance();
                     exec
+                }
+                TokenType::End => {
+                    match self.previous().token_type {
+                        TokenType::Bang => {
+                            // bang == left exec, advance then return
+                            // println!(
+                            //     "exec left {:?} {} @ {}",
+                            //     self.previous().token_type,
+                            //     self.previous().string,
+                            //     self.previous().tok_index
+                            // );
+                            let exec = Exec::Left(op);
+                            exec
+                        }
+                        TokenType::Tilde => {
+                            // println!(
+                            //     "exec right {:?} {} @ {}",
+                            //     self.previous().token_type,
+                            //     self.previous().string,
+                            //     self.previous().tok_index
+                            // );
+                            let exec = Exec::Right(op);
+                            exec
+                        }
+                        _ => {
+                            panic!(
+                                "Exec: expected bang or tilde, found {:?} @ {}",
+                                self.peek().token_type,
+                                self.peek().tok_index
+                            )
+                        }
+                    }
                 }
                 _ => {
                     panic!(
@@ -131,30 +162,30 @@ pub mod par {
         }
 
         pub fn op(&mut self) -> Op {
-            println!(
-                "op before {:?} {} @ {}",
-                self.peek().token_type,
-                self.peek().string,
-                self.peek().tok_index
-            );
+            // println!(
+            //     "op before {:?} {} @ {}",
+            //     self.peek().token_type,
+            //     self.peek().string,
+            //     self.peek().tok_index
+            // );
             // non-terminal
             match self.peek().token_type {
                 TokenType::Instruction => {
-                    println!(
-                        "op inst {:?} {} @ {}",
-                        self.peek().token_type,
-                        self.peek().string,
-                        self.peek().tok_index
-                    );
+                    // println!(
+                    //     "op inst {:?} {} @ {}",
+                    //     self.peek().token_type,
+                    //     self.peek().string,
+                    //     self.peek().tok_index
+                    // );
                     Op::Instruction(self.instruction())
                 }
                 _ => {
-                    println!(
-                        "op lit {:?} {} @ {}",
-                        self.peek().token_type,
-                        self.peek().string,
-                        self.peek().tok_index
-                    );
+                    // println!(
+                    //     "op lit {:?} {} @ {}",
+                    //     self.peek().token_type,
+                    //     self.peek().string,
+                    //     self.peek().tok_index
+                    // );
                     Op::Literal(self.literal())
                 }
             }
@@ -162,12 +193,12 @@ pub mod par {
 
         pub fn instruction(&mut self) -> Instruction {
             // terminal
-            println!(
-                "inst {:?} {} @ {}",
-                self.peek().token_type,
-                self.peek().string,
-                self.peek().tok_index
-            );
+            // println!(
+            //     "inst {:?} {} @ {}",
+            //     self.peek().token_type,
+            //     self.peek().string,
+            //     self.peek().tok_index
+            // );
             let i = Instruction {
                 value: self.peek().string.to_string(),
             };
@@ -177,12 +208,12 @@ pub mod par {
         pub fn literal(&mut self) -> Literal {
             // List, Block: non-terminal
             // all else: terminal
-            println!(
-                "lit {:?} {} @ {}",
-                self.peek().token_type,
-                self.peek().string,
-                self.peek().tok_index
-            );
+            // println!(
+            //     "lit {:?} {} @ {}",
+            //     self.peek().token_type,
+            //     self.peek().string,
+            //     self.peek().tok_index
+            // );
             let tok = self.peek();
             match &tok.token_type {
                 TokenType::Literal(lt) => match lt {
@@ -213,15 +244,15 @@ pub mod par {
         pub fn list(&mut self) -> List {
             // non-terminal
             // [ element , ... ]
-            println!(
-                "list {:?} {} @ {}",
-                self.peek().token_type,
-                self.peek().string,
-                self.peek().tok_index
-            );
+            // println!(
+            //     "list {:?} {} @ {}",
+            //     self.peek().token_type,
+            //     self.peek().string,
+            //     self.peek().tok_index
+            // );
             let mut list_stack: Vec<usize> = Vec::new();
             list_stack.push(self.peek().tok_index);
-            println!("  stack: {:?}", list_stack);
+            // println!("  stack: {:?}", list_stack);
 
             let mut list: Vec<Box<Literal>> = Vec::new();
             &mut self.advance(); // skip list start
@@ -244,10 +275,10 @@ pub mod par {
                     }
                 }
                 &mut self.advance();
-                println!("  stack: {:?}\n  list:  {:?}", list_stack, list);
+                // println!("  stack: {:?}\n  list:  {:?}", list_stack, list);
             }
             // &mut self.advance(); // skip list end
-            println!("  stack: {:?}\n  list:  {:?}", list_stack, list);
+            // println!("  stack: {:?}\n  list:  {:?}", list_stack, list);
             list
         }
 
@@ -259,44 +290,7 @@ pub mod par {
                 self.peek().string,
                 self.peek().tok_index
             );
-
-            let mut block_code = Block::new();
-            let mut block_stack: Vec<Block> = Vec::new();
-
-            loop {
-                println!("{:?}\n{:?}", block_stack, block_code);
-                match self.peek().token_type {
-                    TokenType::BlockBegin => {
-                        block_stack.push(Block::new());
-                        self.advance();
-                    }
-                    TokenType::BlockEnd => {
-                        let mut current_block = block_stack.pop().unwrap();
-                        if block_stack.len() == 0 {
-                            // current block has just ended
-                            println!("end of current block");
-                            block_code.append(&mut current_block);
-                            break;
-                        } else {
-                            // current block is nested in an outer block
-                            println!("nested block");
-                            let mut outer_block = block_stack.pop().unwrap();
-                            outer_block.push(BlockElement::EleBlock(current_block));
-                            block_stack.push(outer_block);
-                            self.advance();
-                        }
-                    }
-                    _ => {
-                        println!("adding new exec");
-                        let mut current_block = block_stack.pop().unwrap();
-                        current_block.push(BlockElement::EleExec(Box::new(self.exec())));
-                        block_stack.push(current_block);
-                        self.advance();
-                    }
-                }
-            }
-            println!("block return {:?}", block_code);
-            block_code
+            unimplemented!()
         }
 
         // utility functions
