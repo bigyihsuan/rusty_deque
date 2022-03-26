@@ -103,6 +103,8 @@ pub mod tree_print {
 }
 
 pub mod tree_evaluator {
+    use std::collections::VecDeque;
+
     use super::visit::*;
     use crate::parser::ast::*;
 
@@ -112,15 +114,19 @@ pub mod tree_evaluator {
     }
 
     pub type StackElement = Literal;
-    pub type Evaluator = Vec<StackElement>;
+
+    #[derive(Debug)]
+    pub struct Evaluator {
+        pub stack: VecDeque<StackElement>,
+    }
 
     impl StackWrapper for Evaluator {
         fn append_left(&mut self, s: StackElement) {
-            self.insert(0, s);
+            self.stack.push_front(s);
         }
 
         fn append_right(&mut self, s: StackElement) {
-            self.push(s);
+            self.stack.push_back(s);
         }
     }
 
@@ -153,6 +159,13 @@ pub mod tree_evaluator {
         }
         fn visit_instruction(&mut self, i: Instruction) -> StackElement {
             // insert map of instructions here
+            match i.value.as_str() {
+                // DEQUE
+                "pop" | "$" => self.stack.pop_back();
+
+                "ol" => {}
+                &_ => {}
+            }
             unimplemented!()
         }
         fn visit_literal(&mut self, l: Literal) -> StackElement {
@@ -161,6 +174,31 @@ pub mod tree_evaluator {
         }
         fn visit_block(&mut self, b: Block) -> StackElement {
             unimplemented!()
+        }
+    }
+
+    // all stack instructions
+    impl Evaluator {
+        // util
+        pub fn new() -> Evaluator {
+            Evaluator { stack: VecDeque::new() }
+        }
+        // DEQUE
+        pub fn pop(self) -> StackElement {
+            self.stack.pop_back().unwrap()
+        }
+        // CASTING
+
+        // NUM OPS
+
+        // COMPS
+
+        // LIST OPS
+        // CONTROL FLOW
+
+        // IO
+        pub fn ol() {
+            println!("{}", Evaluator::pop());
         }
     }
 }

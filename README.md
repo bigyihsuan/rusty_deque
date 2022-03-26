@@ -2,6 +2,12 @@
 
 A simple, deque-based programming language to practice writing Rust.
 
+### Goals
+
+* Learn and practice Rust programming.
+* Create a functional programming language using deques.
+* Create a programming language that allows using code as a deque value.
+
 # Deque
 
 The main data structure is a [deque](https://en.wikipedia.org/wiki/Deque), which allows the insertion and removal of elements at both ends.
@@ -48,8 +54,8 @@ Literals are pushed onto the deque as-is. The appending operator denotes where i
 -321  # negative int
 9.87  # float
 'c'   # single character
-true  # boolean
-false # boolean
+true  # boolean, an instruction that pushes a `true`
+false # boolean, an instruction that pushes a `false`
 [1.2, 'a', [true, 3], -4] # nested list
 []    # empty list
 ```
@@ -106,23 +112,25 @@ These operations attempt to cast primitives to primitives. If the conversion fai
 ## `Int`/`Float` Operations
 
 All of these operate on ints and floats only. Non-ints and non-floats are discarded, with no errors.
-It tries to do integer operations by default; if there is a float, it pushes a float.
+It tries to do integer operations by default; if any arguments are a float, it pushes the result of a float operation.
 
 * `+`: Sum.
 * `-`: Difference.
 * `*`: Product.
-* `/`: Quotient. Discards if the second element is 0.
-* `**`: Pops 2 `a` and `b`, pushes the exponent `a^b`.
-* `//`: Pops 2 `a` and `b`, pushes the logarithm `log_a(b)`
+* `/`: Integer Division. Discards the arguments if the second element is 0.
+* `//`: Float Division. Discards the arguments if the second element is 0.
+* `exp`: `(a b -- a^b)` Pops 2 `a` and `b`, pushes the exponent `a^b`.
+* `log`: `(a b -- log_a[b])` Pops 2 `a` and `b`, pushes the logarithm `log_a(b)`.
 * `--`: Negation.
-* `&`, `|`, `n`: Bitwise AND, OR, NOT. Pushes an int.
+* `&`, `|`, `n`: Bitwise AND, OR, NOT. Ignores types and operates directly on the bits.
 
 ## Comparisons and Boolean Operations
 
 All of these operators push a boolean. All binary operators pop `a` and `b` and push `a OP b`,
 
+* `true`, `false`: Pushes a boolean `true` or `false` onto the deque.
 * `>`,`>=`,`<`,`<=`,`=`: Numerical comparison. You can compare ints, floats, and chars to each other.
-* `&&`, `||`, `nn`: Logical AND, OR, NOT.
+* `&&`, `||`, `^^`: Logical AND, OR, NOT.
 
 ## List Operations
 
@@ -131,27 +139,27 @@ All of these operators push a boolean. All binary operators pop `a` and `b` and 
 List operations still operate on `[Char]` because `[Char]` is still a list.
 
 * `l+`: Concatentates to result the following:
-  * `a, b => [a, b]`
-  * `a, [... b] => [... b, a] `
-  * `[... a], b => [... a, b] `
-  * `[... a], [... b] => [... a, ... b]`
+  * `(a, b -- [a, b]`
+  * `(a, [... b] -- [... b, a]`
+  * `([... a], b -- [... a, b]`
+  * `([... a], [... b] -- [... a, ... b]`
 * `l/`: List slice. Pops a list, and 2 ints `a` and `b`. Pushes a slice of the list from index `a`, inclusive, to `b`, exclusive.
 * `li`: List index. Pops a list and an int, pushes the element at that index. Discards if the index is outside of list bounds.
 * `ll`: List length. Pops a list and pushes the number of elements in the list.
 * `ld`: List destructuring. Pops a list and pushes all elements in that list.
 
-# Control Flow
+## Control Flow
 
 All of these instructs pop blocks that are executed. In the following, a "condition block" is a block that leaves a boolean on the stack when provided a stack that satisfies its instructions. A "body block" is some block of code.
 
 * `loop`: Infinite loop.
-* `for`: Pops a lower bound, upper bound, an increment, and a body block. Equivalent to C-like `for (i=a; a < b; a+=c) { block; }`.
+* `for`: Pops a lower bound `a`, upper bound `b`, an increment block `c`, and a body block. Equivalent to C-like `for (i=a; a < b; a+=c) { block; }`.
 * `in`: Pushes the current loop index.
 * `while`: Pops 2 blocks: a condition block, and a body block. The body block executes while the condition block is true.
 * `break`: Exit the current loop.
 * `itl`: If-Then-Else. Pops 3 blocks: a condtion block, a true block, and a false block. The blocks execute based on the condition block's output. If true, the true block executes. If false, the false block executes.
 
-# Input and Output
+## Input and Output
 
 * `il`: Consumes and pushes a line as a string from STDIN.
 * `iw`: Consumes and pushes a word as a string from STDIN. A word consumes up to the next whitepsace.
