@@ -1,4 +1,4 @@
-pub mod visit {
+pub mod visit1 {
     // https://rust-unofficial.github.io/patterns/patterns/behavioural/visitor.html
     // https://github.com/rust-unofficial/patterns/discussions/236
     use crate::parser::ast::*;

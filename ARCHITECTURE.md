@@ -14,8 +14,8 @@ Instruction = some instruction
 Literal = Int | Float | Bool | Char | String | List | Block
 Block = '{' Code '}'
 
-Int = sone int
-Float = some float
+Int = -? [0-9]+
+Float = Int '.' Int
 Bool = true | false
 Char = "'" character "'"
 String = '"' characters '"'

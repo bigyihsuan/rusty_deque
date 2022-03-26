@@ -1,4 +1,4 @@
-pub mod ast {
+pub mod ast1 {
     // leaves:
     // * Instruction
     // * all literals except Block, List
@@ -31,7 +31,7 @@ pub mod ast {
     pub type Block = Vec<Box<Exec>>;
 }
 
-pub mod par {
+pub mod par1 {
     use std::usize;
 
     use crate::lexer::tok::*;

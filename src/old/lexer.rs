@@ -1,4 +1,4 @@
-pub mod tok {
+pub mod tok1 {
     #[derive(Debug, PartialEq)]
     pub enum TokenType {
         BlockBegin,
@@ -51,7 +51,7 @@ pub mod tok {
     }
 }
 
-pub mod lex {
+pub mod lex1 {
 
     use crate::lexer::tok;
 
