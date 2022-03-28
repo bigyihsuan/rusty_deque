@@ -1,5 +1,5 @@
 pub mod lex_token {
-    use std::fmt::{Debug, Error, Formatter};
+    use std::fmt::{Debug, Display, Error, Formatter};
 
     // The type of a token.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -38,7 +38,17 @@ pub mod lex_token {
         fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
             write!(
                 f,
-                "{:?}({:?}, {:?}, {:?}, {:?}, {:?})\n",
+                "{:?}({:?}, {:?}, {:?}, {:?}, {:?})",
+                self.token_type, self.lexeme, self.error_msg, self.start, self.end, self.line
+            )
+        }
+    }
+
+    impl Display for Token {
+        fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+            write!(
+                f,
+                "{:?}({:?}, {:?}, {:?}, {:?}, {:?})",
                 self.token_type, self.lexeme, self.error_msg, self.start, self.end, self.line
             )
         }
@@ -288,7 +298,8 @@ pub mod lex {
                     }
                 },
                 LexerState::InInstr => match input.chars().nth(i) {
-                    Some(' ') | Some('\t') | Some(',') | Some(']') | Some('}') => {
+                    Some(' ') | Some('\t') | Some(',') | Some(']') | Some('}') | Some('~')
+                    | Some('!') => {
                         token_type = TokenType::Instr;
                         break;
                     }
