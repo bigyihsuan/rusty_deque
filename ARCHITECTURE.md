@@ -5,7 +5,7 @@ This is the `ARCHITECTURE.md` file for describing the general structure of the p
 The grammar of this language is as follows in this EBNF:
 
 ```sh
-Code = Exec*
+Code = Exec+
 Exec = ExecLeft | ExecRight
 ExecLeft = Op '!'
 ExecRight = Op '~'

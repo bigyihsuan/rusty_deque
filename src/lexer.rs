@@ -73,7 +73,7 @@ pub mod lex {
 
     // parses an entire code string into a vector of tokens
     // calls get_next_token() to get the next token
-    pub fn parse_code(input: &String) -> Vec<Token> {
+    pub fn tokenize_code(input: &String) -> Vec<Token> {
         let mut start: usize = 0;
         let mut line: usize = 0;
         let mut tokens = Vec::new();

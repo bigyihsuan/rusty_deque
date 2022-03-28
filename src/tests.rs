@@ -535,7 +535,7 @@ mod tests {
         ];
 
         let input_str = String::from("!~,{}[]");
-        assert_eq!(expected, parse_code(&input_str));
+        assert_eq!(expected, tokenize_code(&input_str));
 
         println!("Testing tokenizing list literal");
         let expected = vec![
@@ -694,7 +694,7 @@ mod tests {
         ];
 
         let input_str = String::from("[1, 2.2, '3', true, false, [], {}, \"\"]");
-        assert_eq!(expected, parse_code(&input_str));
+        assert_eq!(expected, tokenize_code(&input_str));
     }
 
     #[test]
@@ -735,14 +735,14 @@ mod tests {
         ];
         let hello_world = String::from("\"Hello World!\"~ ow~");
         println!("Testing tokenizing `{}`", hello_world);
-        assert_eq!(expected, parse_code(&hello_world));
+        assert_eq!(expected, tokenize_code(&hello_world));
     }
 
     #[test]
     fn test_lex_comments() {
         let input_str = String::from("# This is a comment\n# This is another #comment\n");
         let expected: Vec<Token> = Vec::new();
-        assert_eq!(expected, parse_code(&input_str));
+        assert_eq!(expected, tokenize_code(&input_str));
     }
 
     #[test]
@@ -783,6 +783,6 @@ mod tests {
                 end: 38,
             },
         ];
-        assert_eq!(expected, parse_code(&input_str));
+        assert_eq!(expected, tokenize_code(&input_str));
     }
 }

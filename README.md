@@ -28,7 +28,7 @@ Inspired by [this Esolangs page](https://esolangs.org/wiki/Deque) and [this Conc
 
 ### Factorial
 ```bash
-# given an int n (n -- n~)
+# given an int n (n -- n!)
 {dup~ 2! rot~ <!}~ rot~ {pop! 1!}! {dup~ 1~ -~ 2! -1! {in~ *!}! rot~ for~}! rot~ ite~
 ```
 
