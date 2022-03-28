@@ -1,4 +1,5 @@
 pub mod lex_token {
+    use std::fmt::{Debug, Error, Formatter};
 
     // The type of a token.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -23,7 +24,7 @@ pub mod lex_token {
     }
 
     // A lexical token.
-    #[derive(Debug, Clone, PartialEq)]
+    #[derive(Clone, PartialEq)]
     pub struct Token {
         pub token_type: TokenType,
         pub lexeme: String,
@@ -31,6 +32,16 @@ pub mod lex_token {
         pub start: usize, // Start of the token in the source
         pub end: usize,   // end of the token in the source
         pub line: usize,  // line number of the token in the source
+    }
+
+    impl Debug for Token {
+        fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+            write!(
+                f,
+                "{:?}({:?}, {:?}, {:?}, {:?}, {:?})\n",
+                self.token_type, self.lexeme, self.error_msg, self.start, self.end, self.line
+            )
+        }
     }
 }
 
@@ -47,73 +58,103 @@ pub mod lex {
         InString,
         InInstrOrInt,
         InInstr,
+        InComment,
+    }
+
+    // parses an entire code string into a vector of tokens
+    // calls get_next_token() to get the next token
+    pub fn parse_code(input: &String) -> Vec<Token> {
+        let mut start: usize = 0;
+        let mut line: usize = 0;
+        let mut tokens = Vec::new();
+
+        while start < input.len() {
+            let (token, s, l) = get_next_token(&input, start, line);
+            tokens.push(token);
+            start = s;
+            line = l;
+        }
+        if tokens.last().unwrap().token_type == TokenType::End {
+            tokens.pop();
+        }
+        tokens
     }
 
     // Gets the next token from an input string.
     // Returns the next token, as well as the index of the last character read, and the current line number.
-    pub fn get_next_token(input: String, start: usize, line: usize) -> (Token, usize, usize) {
+    pub fn get_next_token(input: &String, start: usize, line: usize) -> (Token, usize, usize) {
         let mut state = LexerState::Start;
         let mut lexeme = String::new();
         let mut error_msg = String::new();
+        let mut s = start;
         let mut i = start;
         let mut line = line;
         let mut token_type = TokenType::End;
 
         loop {
-            println!(
-                "{} {} '{}' {:?}",
-                i,
-                match input.chars().nth(i) {
-                    Some(c) => c.to_string(),
-                    None => "BLANK".to_string(),
-                },
-                lexeme,
-                state
-            );
+            // println!(
+            //     "{} {} '{}' {:?}",
+            //     i,
+            //     match input.chars().nth(i) {
+            //         Some(c) => c.to_string(),
+            //         None => "BLANK".to_string(),
+            //     },
+            //     lexeme,
+            //     state
+            // );
             match state {
                 LexerState::Start => {
                     // single-character tokens
                     match input.chars().nth(i) {
                         Some(' ') | Some('\t') => {
+                            s += 1;
                             i += 1;
                         }
                         Some('\n') => {
                             line += 1;
+                            s += 1;
                             i += 1;
                         }
                         Some('{') => {
                             token_type = TokenType::LeftCurly;
                             i += 1;
+                            lexeme.push(input.chars().nth(i - 1).unwrap());
                             break;
                         }
                         Some('}') => {
                             token_type = TokenType::RightCurly;
                             i += 1;
+                            lexeme.push(input.chars().nth(i - 1).unwrap());
                             break;
                         }
                         Some('[') => {
                             token_type = TokenType::LeftSquare;
                             i += 1;
+                            lexeme.push(input.chars().nth(i - 1).unwrap());
                             break;
                         }
                         Some(']') => {
                             token_type = TokenType::RightSquare;
                             i += 1;
+                            lexeme.push(input.chars().nth(i - 1).unwrap());
                             break;
                         }
                         Some(',') => {
                             token_type = TokenType::Comma;
                             i += 1;
+                            lexeme.push(input.chars().nth(i - 1).unwrap());
                             break;
                         }
                         Some('!') => {
                             token_type = TokenType::Bang;
                             i += 1;
+                            lexeme.push(input.chars().nth(i - 1).unwrap());
                             break;
                         }
                         Some('~') => {
                             token_type = TokenType::Tilde;
                             i += 1;
+                            lexeme.push(input.chars().nth(i - 1).unwrap());
                             break;
                         }
                         Some('0'..='9') => {
@@ -138,6 +179,10 @@ pub mod lex {
                             state = LexerState::InInstrOrInt;
                             i += 1;
                             lexeme.push('-');
+                        }
+                        Some('#') => {
+                            state = LexerState::InComment;
+                            i += 1;
                         }
                         None => {
                             token_type = TokenType::End;
@@ -178,29 +223,27 @@ pub mod lex {
                         break;
                     }
                 },
-                LexerState::InFloat => {
-                    match input.chars().nth(i) {
-                        Some('0'..='9') => {
-                            i += 1;
-                            lexeme.push(input.chars().nth(i - 1).unwrap());
-                        }
-                        Some('.') => {
-                            error_msg = "Invalid float literal: Floats cannot contain multiple decimal points".to_string();
-                            token_type = TokenType::Error;
-                            break;
-                        }
-                        _ => {
-                            if lexeme.chars().last().unwrap() == '.' {
-                                error_msg = format!(
-                                    "Invalid float literal: missing decimal portion in {}",
-                                    lexeme
-                                );
-                                token_type = TokenType::Error;
-                            }
-                            break;
-                        }
+                LexerState::InFloat => match input.chars().nth(i) {
+                    Some('0'..='9') => {
+                        i += 1;
+                        lexeme.push(input.chars().nth(i - 1).unwrap());
                     }
-                }
+                    Some('.') => {
+                        error_msg =
+                            "Invalid float literal: Floats cannot contain multiple decimal points"
+                                .to_string();
+                        token_type = TokenType::Error;
+                        break;
+                    }
+                    _ => {
+                        if lexeme.chars().last().unwrap() == '.' {
+                            error_msg =
+                                "Invalid float literal: missing decimal portion".to_string();
+                            token_type = TokenType::Error;
+                        }
+                        break;
+                    }
+                },
                 LexerState::InChar => match input.chars().nth(i) {
                     Some('\'') => {
                         i += 1;
@@ -245,16 +288,38 @@ pub mod lex {
                     }
                 },
                 LexerState::InInstr => match input.chars().nth(i) {
-                    Some(' ') | Some('\t') => {
+                    Some(' ') | Some('\t') | Some(',') | Some(']') | Some('}') => {
+                        token_type = TokenType::Instr;
+                        break;
+                    }
+                    Some('\n') => {
                         i += 1;
+                        token_type = TokenType::Instr;
                         break;
                     }
                     Some(_) => {
                         i += 1;
                         lexeme.push(input.chars().nth(i - 1).unwrap());
                     }
-                    None => {
+                    _ => {
                         token_type = TokenType::Instr;
+                        break;
+                    }
+                },
+                LexerState::InComment => match input.chars().nth(i) {
+                    Some('\n') => {
+                        i += 1;
+                        s += 1;
+                        line += 1;
+                        state = LexerState::Start;
+                        lexeme = String::new()
+                    }
+                    Some(_) => {
+                        i += 1;
+                        s += 1;
+                    }
+                    None => {
+                        token_type = TokenType::End;
                         break;
                     }
                 },
@@ -266,379 +331,12 @@ pub mod lex {
                 token_type: token_type,
                 lexeme: lexeme,
                 error_msg: error_msg,
-                start: start,
+                start: s,
                 end: i,
                 line: line,
             },
             i,
             line,
         )
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::lexer::lex::*;
-    use crate::lexer::lex_token::*;
-
-    #[test]
-    fn test_const_int() {
-        println!("Testing tokenizing ConstInt {}", 0);
-        assert_eq!(
-            get_next_token(String::from("0"), 0, 0).0,
-            Token {
-                token_type: TokenType::ConstInt,
-                lexeme: String::from("0"),
-                error_msg: String::new(),
-                line: 0,
-                start: 0,
-                end: 1,
-            }
-        );
-
-        println!("Testing tokenizing ConstInt {}", 123);
-        assert_eq!(
-            get_next_token(String::from("123"), 0, 0).0,
-            Token {
-                token_type: TokenType::ConstInt,
-                lexeme: String::from("123"),
-                error_msg: String::new(),
-                line: 0,
-                start: 0,
-                end: 3,
-            }
-        );
-
-        println!("Testing tokenizing ConstInt {}", -123);
-        assert_eq!(
-            get_next_token(String::from("-123"), 0, 0).0,
-            Token {
-                token_type: TokenType::ConstInt,
-                lexeme: String::from("-123"),
-                error_msg: String::new(),
-                line: 0,
-                start: 0,
-                end: 4,
-            }
-        );
-    }
-
-    #[test]
-    fn test_const_float() {
-        println!("Testing tokenizing ConstFloat {}", 0.0);
-        assert_eq!(
-            get_next_token(String::from("0.0"), 0, 0).0,
-            Token {
-                token_type: TokenType::ConstFloat,
-                lexeme: String::from("0.0"),
-                error_msg: String::new(),
-                line: 0,
-                start: 0,
-                end: 3,
-            }
-        );
-
-        println!("Testing tokenizing ConstFloat {}", 123.123);
-        assert_eq!(
-            get_next_token(String::from("123.123"), 0, 0).0,
-            Token {
-                token_type: TokenType::ConstFloat,
-                lexeme: String::from("123.123"),
-                error_msg: String::new(),
-                line: 0,
-                start: 0,
-                end: 7,
-            }
-        );
-
-        println!("Testing tokenizing ConstFloat {}", -123.123);
-        assert_eq!(
-            get_next_token(String::from("-123.123"), 0, 0).0,
-            Token {
-                token_type: TokenType::ConstFloat,
-                lexeme: String::from("-123.123"),
-                error_msg: String::new(),
-                line: 0,
-                start: 0,
-                end: 8,
-            }
-        );
-
-        println!("Testing tokenizing ConstFloat {}", 0.123);
-        assert_eq!(
-            get_next_token(String::from("0.123"), 0, 0).0,
-            Token {
-                token_type: TokenType::ConstFloat,
-                lexeme: String::from("0.123"),
-                error_msg: String::new(),
-                line: 0,
-                start: 0,
-                end: 5,
-            }
-        );
-
-        println!("Testing failing ConstFloat {}", "0.123.123");
-        assert_eq!(
-            get_next_token(String::from("0.123.123"), 0, 0).0,
-            Token {
-                token_type: TokenType::Error,
-                lexeme: String::from("0.123"),
-                error_msg: String::from(
-                    "Invalid float literal: Floats cannot contain multiple decimal points"
-                ),
-                line: 0,
-                start: 0,
-                end: 5,
-            }
-        );
-    }
-
-    #[test]
-    fn test_const_char() {
-        println!("Testing tokenizing ConstChar {}", 'a');
-        assert_eq!(
-            get_next_token(String::from("'a'"), 0, 0).0,
-            Token {
-                token_type: TokenType::ConstChar,
-                lexeme: String::from("'a'"),
-                error_msg: String::new(),
-                line: 0,
-                start: 0,
-                end: 3,
-            }
-        );
-
-        println!("Testing tokenizing escaped ConstChar {}", "'\\n'");
-        assert_eq!(
-            get_next_token(String::from("'\\n'"), 0, 0).0,
-            Token {
-                token_type: TokenType::ConstChar,
-                lexeme: String::from("'\\n'"),
-                error_msg: String::new(),
-                line: 0,
-                start: 0,
-                end: 4,
-            }
-        );
-
-        println!("Testing tokenizing unclosed ConstChar {}", "'a");
-        assert_eq!(
-            get_next_token(String::from("'a"), 0, 0).0,
-            Token {
-                token_type: TokenType::Error,
-                lexeme: String::from("'a"),
-                error_msg: String::from("Invalid char literal: Unterminated character constant"),
-                line: 0,
-                start: 0,
-                end: 2,
-            }
-        );
-
-        println!("Testing tokenizing too-long ConstChar {}", "'ab'");
-        assert_eq!(
-            get_next_token(String::from("'ab'"), 0, 0).0,
-            Token {
-                token_type: TokenType::Error,
-                lexeme: String::from("'ab'"),
-                error_msg: String::from("Invalid char literal: Character constant too long"),
-                line: 0,
-                start: 0,
-                end: 4,
-            }
-        );
-    }
-
-    #[test]
-    fn test_const_string() {
-        println!("Testing tokenizing ConstString \"{}\"", "a");
-        assert_eq!(
-            get_next_token(String::from("\"a\""), 0, 0).0,
-            Token {
-                token_type: TokenType::ConstString,
-                lexeme: String::from("\"a\""),
-                error_msg: String::new(),
-                line: 0,
-                start: 0,
-                end: 3,
-            }
-        );
-
-        println!("Testing tokenizing ConstString \"{}\"", "abc");
-        assert_eq!(
-            get_next_token(String::from("\"abc\""), 0, 0).0,
-            Token {
-                token_type: TokenType::ConstString,
-                lexeme: String::from("\"abc\""),
-                error_msg: String::new(),
-                line: 0,
-                start: 0,
-                end: 5,
-            }
-        );
-
-        println!("Testing tokenizing ConstString \"{}\"", "abcdef");
-        assert_eq!(
-            get_next_token(String::from("\"abcdef\""), 0, 0).0,
-            Token {
-                token_type: TokenType::ConstString,
-                lexeme: String::from("\"abcdef\""),
-                error_msg: String::new(),
-                line: 0,
-                start: 0,
-                end: 8,
-            }
-        );
-
-        println!(
-            "Testing tokenizing ConstString \"{}\"",
-            "abcd efghijklmnopqrst uvwxyz"
-        );
-        assert_eq!(
-            get_next_token(String::from("\"abcd efghijklmnopqrst uvwxyz\""), 0, 0).0,
-            Token {
-                token_type: TokenType::ConstString,
-                lexeme: String::from("\"abcd efghijklmnopqrst uvwxyz\""),
-                error_msg: String::new(),
-                line: 0,
-                start: 0,
-                end: 30,
-            }
-        );
-
-        println!(
-            "Testing tokenizing multiline ConstString \"{}\"",
-            "abcdefghijklm\nopqrstuvwxyz\n0123456789"
-        );
-        assert_eq!(
-            get_next_token(
-                String::from("\"abcdefghijklm\nopqrstuvwxyz\n0123456789\""),
-                0,
-                0
-            )
-            .0,
-            Token {
-                token_type: TokenType::ConstString,
-                lexeme: String::from("\"abcdefghijklm\nopqrstuvwxyz\n0123456789\""),
-                error_msg: String::new(),
-                line: 0,
-                start: 0,
-                end: 39,
-            }
-        );
-
-        println!(
-            "Testing tokenizing unterminated ConstString \"{}\"",
-            "\"this is a test"
-        );
-        assert_eq!(
-            get_next_token(String::from("\"this is a test"), 0, 0).0,
-            Token {
-                token_type: TokenType::Error,
-                lexeme: String::from("\"this is a test"),
-                error_msg: String::from("Invalid string literal: Unterminated string constant"),
-                line: 0,
-                start: 0,
-                end: 15,
-            }
-        );
-    }
-
-    #[test]
-    fn test_instr() {
-        println!("Testing tokenizing Instr {}", "instr");
-        assert_eq!(
-            get_next_token(String::from("instr"), 0, 0).0,
-            Token {
-                token_type: TokenType::Instr,
-                lexeme: String::from("instr"),
-                error_msg: String::new(),
-                line: 0,
-                start: 0,
-                end: 5,
-            }
-        );
-
-        println!("Testing tokenizing Instr {}", "true");
-        assert_eq!(
-            get_next_token(String::from("true"), 0, 0).0,
-            Token {
-                token_type: TokenType::Instr,
-                lexeme: String::from("true"),
-                error_msg: String::new(),
-                line: 0,
-                start: 0,
-                end: 4,
-            }
-        );
-
-        println!("Testing tokenizing Instr {}", "false");
-
-        println!("Testing tokenizing Instr {}", "-");
-        assert_eq!(
-            get_next_token(String::from("-"), 0, 0).0,
-            Token {
-                token_type: TokenType::Instr,
-                lexeme: String::from("-"),
-                error_msg: String::new(),
-                line: 0,
-                start: 0,
-                end: 1,
-            }
-        );
-
-        println!("Testing tokenizing Instr {}", "+");
-        assert_eq!(
-            get_next_token(String::from("+"), 0, 0).0,
-            Token {
-                token_type: TokenType::Instr,
-                lexeme: String::from("+"),
-                error_msg: String::new(),
-                line: 0,
-                start: 0,
-                end: 1,
-            }
-        );
-
-        println!("Testing tokenizing Instr {}", "dup");
-        assert_eq!(
-            get_next_token(String::from("dup"), 0, 0).0,
-            Token {
-                token_type: TokenType::Instr,
-                lexeme: String::from("dup"),
-                error_msg: String::new(),
-                line: 0,
-                start: 0,
-                end: 3,
-            }
-        );
-
-        println!("Testing tokenizing Instr {}", "in");
-        assert_eq!(
-            get_next_token(String::from("in"), 0, 0).0,
-            Token {
-                token_type: TokenType::Instr,
-                lexeme: String::from("in"),
-                error_msg: String::new(),
-                line: 0,
-                start: 0,
-                end: 2,
-            }
-        );
-
-        println!(
-            "Testing tokenizing Instr {}",
-            "this_isnt_an_instr_but_it_should_work"
-        );
-        assert_eq!(
-            get_next_token(String::from("this_isnt_an_instr_but_it_should_work"), 0, 0).0,
-            Token {
-                token_type: TokenType::Instr,
-                lexeme: String::from("this_isnt_an_instr_but_it_should_work"),
-                error_msg: String::new(),
-                line: 0,
-                start: 0,
-                end: 37,
-            }
-        );
     }
 }
