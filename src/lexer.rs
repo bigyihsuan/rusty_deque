@@ -157,8 +157,8 @@ pub mod lex {
                         state = LexerState::InInt;
                     }
                     _ => {
-                        i += 1;
-                        lexeme.push(input.chars().nth(i - 1).unwrap());
+                        // i += 1;
+                        // lexeme.push(input.chars().nth(i - 1).unwrap());
                         state = LexerState::InInstr;
                     }
                 },
@@ -539,6 +539,105 @@ mod tests {
                 line: 0,
                 start: 0,
                 end: 15,
+            }
+        );
+    }
+
+    #[test]
+    fn test_instr() {
+        println!("Testing tokenizing Instr {}", "instr");
+        assert_eq!(
+            get_next_token(String::from("instr"), 0, 0).0,
+            Token {
+                token_type: TokenType::Instr,
+                lexeme: String::from("instr"),
+                error_msg: String::new(),
+                line: 0,
+                start: 0,
+                end: 5,
+            }
+        );
+
+        println!("Testing tokenizing Instr {}", "true");
+        assert_eq!(
+            get_next_token(String::from("true"), 0, 0).0,
+            Token {
+                token_type: TokenType::Instr,
+                lexeme: String::from("true"),
+                error_msg: String::new(),
+                line: 0,
+                start: 0,
+                end: 4,
+            }
+        );
+
+        println!("Testing tokenizing Instr {}", "false");
+
+        println!("Testing tokenizing Instr {}", "-");
+        assert_eq!(
+            get_next_token(String::from("-"), 0, 0).0,
+            Token {
+                token_type: TokenType::Instr,
+                lexeme: String::from("-"),
+                error_msg: String::new(),
+                line: 0,
+                start: 0,
+                end: 1,
+            }
+        );
+
+        println!("Testing tokenizing Instr {}", "+");
+        assert_eq!(
+            get_next_token(String::from("+"), 0, 0).0,
+            Token {
+                token_type: TokenType::Instr,
+                lexeme: String::from("+"),
+                error_msg: String::new(),
+                line: 0,
+                start: 0,
+                end: 1,
+            }
+        );
+
+        println!("Testing tokenizing Instr {}", "dup");
+        assert_eq!(
+            get_next_token(String::from("dup"), 0, 0).0,
+            Token {
+                token_type: TokenType::Instr,
+                lexeme: String::from("dup"),
+                error_msg: String::new(),
+                line: 0,
+                start: 0,
+                end: 3,
+            }
+        );
+
+        println!("Testing tokenizing Instr {}", "in");
+        assert_eq!(
+            get_next_token(String::from("in"), 0, 0).0,
+            Token {
+                token_type: TokenType::Instr,
+                lexeme: String::from("in"),
+                error_msg: String::new(),
+                line: 0,
+                start: 0,
+                end: 2,
+            }
+        );
+
+        println!(
+            "Testing tokenizing Instr {}",
+            "this_isnt_an_instr_but_it_should_work"
+        );
+        assert_eq!(
+            get_next_token(String::from("this_isnt_an_instr_but_it_should_work"), 0, 0).0,
+            Token {
+                token_type: TokenType::Instr,
+                lexeme: String::from("this_isnt_an_instr_but_it_should_work"),
+                error_msg: String::new(),
+                line: 0,
+                start: 0,
+                end: 37,
             }
         );
     }
