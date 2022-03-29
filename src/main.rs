@@ -1,5 +1,7 @@
 mod lexer;
-mod tests;
+mod parser;
+mod test_lex;
+mod test_par;
 
 fn main() {
     let input_str = String::from(

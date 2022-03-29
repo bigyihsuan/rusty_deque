@@ -143,6 +143,19 @@ mod tests {
             }
         );
 
+        println!("Testing tokenizing escaped ConstChar {}", "'\\''");
+        assert_eq!(
+            get_next_token(&String::from("'\\''"), 0, 0).0,
+            Token {
+                token_type: TokenType::ConstChar,
+                lexeme: String::from("'\\''"),
+                error_msg: String::new(),
+                line: 0,
+                start: 0,
+                end: 4,
+            }
+        );
+
         println!("Testing tokenizing escaped ConstChar {}", "'\\n'");
         assert_eq!(
             get_next_token(&String::from("'\\n'"), 0, 0).0,
@@ -706,31 +719,31 @@ mod tests {
                 error_msg: String::new(),
                 line: 0,
                 start: 0,
-                end: 15,
+                end: 14,
             },
             Token {
                 token_type: TokenType::Tilde,
                 lexeme: String::from("~"),
                 error_msg: String::new(),
                 line: 0,
-                start: 15,
-                end: 16,
+                start: 14,
+                end: 15,
             },
             Token {
                 token_type: TokenType::Instr,
                 lexeme: String::from("ow"),
                 error_msg: String::new(),
                 line: 0,
-                start: 17,
-                end: 19,
+                start: 16,
+                end: 18,
             },
             Token {
                 token_type: TokenType::Tilde,
                 lexeme: String::from("~"),
                 error_msg: String::new(),
                 line: 0,
-                start: 19,
-                end: 20,
+                start: 18,
+                end: 19,
             },
         ];
         let hello_world = String::from("\"Hello World!\"~ ow~");
