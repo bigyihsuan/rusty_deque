@@ -151,9 +151,82 @@ mod tests {
     }
 
     #[test]
+    fn test_par_strings() {
+        let strings = vec![
+            String::from("\"Hello World!\""),
+            String::from("\"\""), // empty string
+            String::from("\"Hello\""),
+            String::from("\"\\\"\""),   // string with escaped double quotes
+            String::from("\"\\'\\'\""), // string with escaped single quotes
+            String::from("\"Hello\\nWorld!\""),
+            String::from("\"Hello\\n\\tWorld!\""),
+        ];
+        let expected = vec![
+            Literal::List(
+                String::from("Hello World!")
+                    .chars()
+                    .map(|c| Literal::Char(c))
+                    .collect::<Vec<Literal>>(),
+            ),
+            Literal::List(
+                String::from("")
+                    .chars()
+                    .map(|c| Literal::Char(c))
+                    .collect::<Vec<Literal>>(),
+            ),
+            Literal::List(
+                String::from("Hello")
+                    .chars()
+                    .map(|c| Literal::Char(c))
+                    .collect::<Vec<Literal>>(),
+            ),
+            Literal::List(
+                String::from("\"")
+                    .chars()
+                    .map(|c| Literal::Char(c))
+                    .collect::<Vec<Literal>>(),
+            ),
+            Literal::List(
+                String::from("\'\'")
+                    .chars()
+                    .map(|c| Literal::Char(c))
+                    .collect::<Vec<Literal>>(),
+            ),
+            Literal::List(
+                String::from("Hello\nWorld!")
+                    .chars()
+                    .map(|c| Literal::Char(c))
+                    .collect::<Vec<Literal>>(),
+            ),
+            Literal::List(
+                String::from("Hello\n\tWorld!")
+                    .chars()
+                    .map(|c| Literal::Char(c))
+                    .collect::<Vec<Literal>>(),
+            ),
+        ];
+
+        for (expect, input) in expected.iter().zip(strings.iter()) {
+            let token = get_next_token(&input, 0, 0).0;
+            let literal = parse_literal(token);
+
+            assert_eq!(expect, &literal);
+            println!("{:?}", literal);
+        }
+    }
+
+    #[test]
     #[should_panic(expected = "Parser Error: Unrecognized character escape sequence")]
-    fn test_par_invalid_char_escapes() {
+    fn test_par_invalid_char_escapes_for_char() {
         let input_str = String::from("'\\a'");
+        let token = get_next_token(&input_str, 0, 0).0;
+        parse_literal(token);
+    }
+
+    #[test]
+    #[should_panic(expected = "Parser Error: Unrecognized character escape sequence")]
+    fn test_par_invalid_char_escapes_for_string() {
+        let input_str = String::from("\"\\a\"");
         let token = get_next_token(&input_str, 0, 0).0;
         parse_literal(token);
     }

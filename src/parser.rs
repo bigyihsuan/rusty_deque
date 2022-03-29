@@ -144,6 +144,7 @@ pub mod par {
             TokenType::ConstInt => Literal::new_int(token.lexeme.parse::<i64>().unwrap()),
             TokenType::ConstFloat => Literal::new_float(token.lexeme.parse::<f64>().unwrap()),
             TokenType::ConstChar => {
+                // strip quotes
                 let mut chars = token.lexeme.chars();
                 chars.next();
                 chars.next_back();
@@ -170,7 +171,37 @@ pub mod par {
                 }
             }
             TokenType::ConstString => {
-                Literal::new_list(token.lexeme.chars().map(|c| Literal::new_char(c)).collect())
+                // strip quotes
+                let mut chars = token.lexeme.chars();
+                chars.next();
+                chars.next_back();
+                let chars: String = chars.collect();
+
+                let mut string_chars: Vec<Literal> = vec![];
+                let mut iter = chars.chars();
+                while let Some(c) = iter.next() {
+                    // handle escaped characters, which start with a forwards slash
+                    if c == '\\' {
+                        // take another character
+                        let c = iter.next().unwrap();
+                        string_chars.push(match c {
+                            'n' => Literal::new_char('\n'),
+                            'r' => Literal::new_char('\r'),
+                            't' => Literal::new_char('\t'),
+                            '\\' => Literal::new_char('\\'),
+                            '\'' => Literal::new_char('\''),
+                            '\"' => Literal::new_char('\"'),
+                            '0' => Literal::new_char('\0'),
+                            _ => panic!(
+                                "Parser Error: Unrecognized character escape sequence `{}`",
+                                chars
+                            ),
+                        });
+                    } else {
+                        string_chars.push(Literal::new_char(c));
+                    }
+                }
+                Literal::new_list(string_chars)
             }
             _ => panic!(
                 "Parser Error: Unexpected token type {:?} for Literal",

@@ -286,6 +286,13 @@ pub mod lex {
                     }
                 },
                 LexerState::InString => match input.chars().nth(i) {
+                    Some('\\') => {
+                        // escape character, add 2 characters
+                        i += 1;
+                        lexeme.push(input.chars().nth(i - 1).unwrap());
+                        i += 1;
+                        lexeme.push(input.chars().nth(i - 1).unwrap());
+                    }
                     Some('"') => {
                         i += 1;
                         lexeme.push(input.chars().nth(i - 1).unwrap());
