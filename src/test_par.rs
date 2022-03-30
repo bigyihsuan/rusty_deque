@@ -1,11 +1,12 @@
 #[cfg(test)]
 mod tests {
+
     use crate::lexer::lex::*;
     use crate::lexer::lex_token::*;
     use crate::parser::par::*;
     use crate::parser::par_ast::*;
 
-    #[test]
+    //#[test]
     fn test_par_hello_world() {
         let input_str = String::from("\"Hello World!\"~ ow~");
         let tokens = tokenize_code(&input_str);
@@ -229,5 +230,152 @@ mod tests {
         let input_str = String::from("\"\\a\"");
         let token = get_next_token(&input_str, 0, 0).0;
         parse_literal(token);
+    }
+
+    #[test]
+    #[should_panic(expected = "Parsing Error: Unclosed list")]
+    fn test_par_invalid_list() {
+        let input_str = String::from("[1, 2, 3");
+        let tokens = tokenize_code(&input_str);
+        println!("{:?}", tokens);
+        println!("{:?}", parse_list(&mut tokens.into_iter(), false));
+    }
+
+    #[test]
+    #[should_panic(expected = "Parsing Error: Unclosed list")]
+    fn test_par_invalid_nested_list() {
+        let input_str = String::from("[1, [2, 3");
+        let tokens = tokenize_code(&input_str);
+        println!("{:?}", tokens);
+        println!("{:?}", parse_list(&mut tokens.into_iter(), false));
+    }
+
+    #[test]
+    fn test_par_list() {
+        let input_str = String::from("[1, 2, 3]");
+        let tokens = tokenize_code(&input_str);
+        println!("{:?}", &tokens);
+        let list = parse_list(&mut tokens.into_iter(), false);
+        println!("{:?}", list);
+
+        let expected = Literal::List(vec![Literal::Int(1), Literal::Int(2), Literal::Int(3)]);
+        assert_eq!(expected, list)
+    }
+
+    #[test]
+    fn test_par_nested_list_end() {
+        let input_str = String::from("[1, 4, [2, 3]]");
+        let tokens = tokenize_code(&input_str);
+        println!("{:?}", &tokens);
+        let list = parse_list(&mut tokens.into_iter(), false);
+        println!("{:?}", list);
+
+        let expected = Literal::List(vec![
+            Literal::Int(1),
+            Literal::Int(4),
+            Literal::List(vec![Literal::Int(2), Literal::Int(3)]),
+        ]);
+        assert_eq!(expected, list)
+    }
+
+    #[test]
+    fn test_par_nested_list_middle() {
+        let input_str = String::from("[1, [2, 3], 4]");
+        let tokens = tokenize_code(&input_str);
+        println!("{:?}", &tokens);
+        let list = parse_list(&mut tokens.into_iter(), false);
+        println!("{:?}", list);
+
+        let expected = Literal::List(vec![
+            Literal::Int(1),
+            Literal::List(vec![Literal::Int(2), Literal::Int(3)]),
+            Literal::Int(4),
+        ]);
+        assert_eq!(expected, list)
+    }
+
+    #[test]
+    fn test_par_nested_list_start() {
+        let input_str = String::from("[[2, 3], 1, 4]");
+        let tokens = tokenize_code(&input_str);
+        println!("{:?}", &tokens);
+        let list = parse_list(&mut tokens.into_iter(), false);
+        println!("{:?}", list);
+
+        let expected = Literal::List(vec![
+            Literal::List(vec![Literal::Int(2), Literal::Int(3)]),
+            Literal::Int(1),
+            Literal::Int(4),
+        ]);
+        assert_eq!(expected, list)
+    }
+
+    #[test]
+    fn test_par_nested_list_multiple() {
+        let input_str = String::from("[[2, 3], [1, 4]]");
+        let tokens = tokenize_code(&input_str);
+        println!("{:?}", &tokens);
+        let list = parse_list(&mut tokens.into_iter(), false);
+        println!("{:?}", list);
+
+        let expected = Literal::List(vec![
+            Literal::List(vec![Literal::Int(2), Literal::Int(3)]),
+            Literal::List(vec![Literal::Int(1), Literal::Int(4)]),
+        ]);
+        assert_eq!(expected, list)
+    }
+
+    #[test]
+    fn test_par_nested_list_strings() {
+        let input_str = String::from("[[\"hello\", \"world\"], [\"[this,isnt]\", \"[a,list]\"]]");
+        let tokens = tokenize_code(&input_str);
+        println!("{:?}", &tokens);
+        let list = parse_list(&mut tokens.into_iter(), false);
+        println!("{:?}", list);
+
+        let expected = Literal::List(vec![
+            Literal::List(vec![
+                Literal::List(vec![
+                    Literal::Char('h'),
+                    Literal::Char('e'),
+                    Literal::Char('l'),
+                    Literal::Char('l'),
+                    Literal::Char('o'),
+                ]),
+                Literal::List(vec![
+                    Literal::Char('w'),
+                    Literal::Char('o'),
+                    Literal::Char('r'),
+                    Literal::Char('l'),
+                    Literal::Char('d'),
+                ]),
+            ]),
+            Literal::List(vec![
+                Literal::List(vec![
+                    Literal::Char('['),
+                    Literal::Char('t'),
+                    Literal::Char('h'),
+                    Literal::Char('i'),
+                    Literal::Char('s'),
+                    Literal::Char(','),
+                    Literal::Char('i'),
+                    Literal::Char('s'),
+                    Literal::Char('n'),
+                    Literal::Char('t'),
+                    Literal::Char(']'),
+                ]),
+                Literal::List(vec![
+                    Literal::Char('['),
+                    Literal::Char('a'),
+                    Literal::Char(','),
+                    Literal::Char('l'),
+                    Literal::Char('i'),
+                    Literal::Char('s'),
+                    Literal::Char('t'),
+                    Literal::Char(']'),
+                ]),
+            ]),
+        ]);
+        assert_eq!(expected, list)
     }
 }
