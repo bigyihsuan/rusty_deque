@@ -15,6 +15,7 @@ pub mod lex_token {
         // MULTI CHARACTERS
         ConstInt,
         ConstFloat,
+        ConstBool,
         ConstChar,
         ConstString,
         Instr,
@@ -67,7 +68,8 @@ pub mod lex {
         InChar,
         InString,
         InInstrOrInt,
-        InInstr,
+        InInstrOrBool,
+        // InInstr,
         InComment,
     }
 
@@ -199,7 +201,7 @@ pub mod lex {
                             break;
                         }
                         _ => {
-                            state = LexerState::InInstr;
+                            state = LexerState::InInstrOrBool;
                             i += 1;
                             lexeme.push(input.chars().nth(i - 1).unwrap());
                         }
@@ -214,7 +216,7 @@ pub mod lex {
                     _ => {
                         // i += 1;
                         // lexeme.push(input.chars().nth(i - 1).unwrap());
-                        state = LexerState::InInstr;
+                        state = LexerState::InInstrOrBool;
                     }
                 },
                 LexerState::InInt => match input.chars().nth(i) {
@@ -311,15 +313,23 @@ pub mod lex {
                         lexeme.push(input.chars().nth(i - 1).unwrap());
                     }
                 },
-                LexerState::InInstr => match input.chars().nth(i) {
+                LexerState::InInstrOrBool => match input.chars().nth(i) {
                     Some(' ') | Some('\t') | Some(',') | Some(']') | Some('}') | Some('~')
                     | Some('!') => {
+                        if lexeme == "true" || lexeme == "false" {
+                            token_type = TokenType::ConstBool;
+                            break;
+                        }
                         token_type = TokenType::Instr;
                         break;
                     }
                     Some('\n') => {
                         i += 1;
-                        token_type = TokenType::Instr;
+                        if lexeme == "true" || lexeme == "false" {
+                            token_type = TokenType::ConstBool;
+                        } else {
+                            token_type = TokenType::Instr;
+                        }
                         break;
                     }
                     Some(_) => {
@@ -327,7 +337,11 @@ pub mod lex {
                         lexeme.push(input.chars().nth(i - 1).unwrap());
                     }
                     _ => {
-                        token_type = TokenType::Instr;
+                        if lexeme == "true" || lexeme == "false" {
+                            token_type = TokenType::ConstBool;
+                        } else {
+                            token_type = TokenType::Instr;
+                        }
                         break;
                     }
                 },

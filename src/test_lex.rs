@@ -752,6 +752,30 @@ mod tests {
     }
 
     #[test]
+    fn test_lex_bools() {
+        let input_str = String::from("true false");
+        let expected = vec![
+            Token {
+                token_type: TokenType::ConstBool,
+                lexeme: String::from("true"),
+                error_msg: String::new(),
+                line: 0,
+                start: 0,
+                end: 4,
+            },
+            Token {
+                token_type: TokenType::ConstBool,
+                lexeme: String::from("false"),
+                error_msg: String::new(),
+                line: 0,
+                start: 5,
+                end: 10,
+            },
+        ];
+        assert_eq!(expected, tokenize_code(&input_str));
+    }
+
+    #[test]
     fn test_lex_comments() {
         let input_str = String::from("# This is a comment\n# This is another #comment\n");
         let expected: Vec<Token> = Vec::new();

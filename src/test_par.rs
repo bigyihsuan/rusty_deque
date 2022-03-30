@@ -10,7 +10,7 @@ mod tests {
     fn test_par_hello_world() {
         let input_str = String::from("\"Hello World!\"~ ow~");
         let tokens = tokenize_code(&input_str);
-        let code = parse_tokens(tokens);
+        let code = parse_tokens(&mut tokens.into_iter());
 
         let expected = vec![
             Exec::Right(Op::Literal(Literal::List(vec![
@@ -39,7 +39,7 @@ mod tests {
     fn test_par_invalid_literal() {
         let input_str = String::from("ow");
         let token = get_next_token(&input_str, 0, 0).0;
-        parse_literal(token);
+        parse_literal(&token);
     }
 
     #[test]
@@ -68,7 +68,7 @@ mod tests {
 
         for (i, input) in ints.iter().enumerate() {
             let token = get_next_token(&input, 0, 0).0;
-            let literal = parse_literal(token);
+            let literal = parse_literal(&token);
 
             assert_eq!(expected[i], literal);
             println!("{:?}", literal);
@@ -105,7 +105,7 @@ mod tests {
 
         for (i, input) in floats.iter().enumerate() {
             let token = get_next_token(&input, 0, 0).0;
-            let literal = parse_literal(token);
+            let literal = parse_literal(&token);
 
             assert_eq!(expected[i], literal);
             println!("{:?}", literal);
@@ -144,7 +144,7 @@ mod tests {
         for (i, input) in chars.iter().enumerate() {
             println!("input: {:}", input);
             let token = get_next_token(&input, 0, 0).0;
-            let literal = parse_literal(token);
+            let literal = parse_literal(&token);
 
             println!("{:?}\n", literal);
             assert_eq!(expected[i], literal);
@@ -209,7 +209,7 @@ mod tests {
 
         for (expect, input) in expected.iter().zip(strings.iter()) {
             let token = get_next_token(&input, 0, 0).0;
-            let literal = parse_literal(token);
+            let literal = parse_literal(&token);
 
             assert_eq!(expect, &literal);
             println!("{:?}", literal);
@@ -221,7 +221,7 @@ mod tests {
     fn test_par_invalid_char_escapes_for_char() {
         let input_str = String::from("'\\a'");
         let token = get_next_token(&input_str, 0, 0).0;
-        parse_literal(token);
+        parse_literal(&token);
     }
 
     #[test]
@@ -229,7 +229,7 @@ mod tests {
     fn test_par_invalid_char_escapes_for_string() {
         let input_str = String::from("\"\\a\"");
         let token = get_next_token(&input_str, 0, 0).0;
-        parse_literal(token);
+        parse_literal(&token);
     }
 
     #[test]
@@ -377,5 +377,66 @@ mod tests {
             ]),
         ]);
         assert_eq!(expected, list)
+    }
+
+    #[test]
+    fn test_par_list_readme() {
+        let input_str = String::from("[1.2, 'a', [true, 3], -4]");
+        let tokens = tokenize_code(&input_str);
+        println!("{:?}", &tokens);
+        let list = parse_list(&mut tokens.into_iter(), false);
+
+        let expected = Literal::List(vec![
+            Literal::Float(1.2),
+            Literal::Char('a'),
+            Literal::List(vec![Literal::Bool(true), Literal::Int(3)]),
+            Literal::Int(-4),
+        ]);
+
+        assert_eq!(expected, list)
+    }
+
+    #[test]
+    fn test_par_op() {
+        let input_strs = vec![
+            String::from("1"),
+            String::from("\"hello\""),
+            String::from("[1, 2, 3]"),
+            String::from("true"),
+            String::from("false"),
+            String::from("ol"),
+            String::from("hello"),
+            String::from("+"),
+        ];
+
+        let expected = vec![
+            Op::Literal(Literal::Int(1)),
+            Op::Literal(Literal::List(vec![
+                Literal::Char('h'),
+                Literal::Char('e'),
+                Literal::Char('l'),
+                Literal::Char('l'),
+                Literal::Char('o'),
+            ])),
+            Op::Literal(Literal::List(vec![
+                Literal::Int(1),
+                Literal::Int(2),
+                Literal::Int(3),
+            ])),
+            Op::Literal(Literal::Bool(true)),
+            Op::Literal(Literal::Bool(false)),
+            Op::Instruction(String::from("ol")),
+            Op::Instruction(String::from("hello")),
+            Op::Instruction(String::from("+")),
+        ];
+
+        for (input_str, expected) in input_strs.iter().zip(expected.iter()) {
+            println!("{}", input_str);
+            let tokens = tokenize_code(input_str);
+            println!("{:?}", &tokens);
+            let op = parse_op(&mut tokens.into_iter());
+            println!("{:?}\n", op);
+            assert_eq!(expected, &op);
+        }
     }
 }

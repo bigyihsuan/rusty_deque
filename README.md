@@ -128,7 +128,7 @@ It tries to do integer operations by default; if any arguments are a float, it p
 
 All of these operators push a boolean. All binary operators pop `a` and `b` and push `a OP b`,
 
-* `true`, `false`: Pushes a boolean `true` or `false` onto the deque.
+* `true`, `false`: The boolean constant. Pushes a boolean `true` or `false` onto the deque.
 * `>`,`>=`,`<`,`<=`,`=`: Numerical comparison. You can compare ints, floats, and chars to each other.
 * `&&`, `||`, `^^`: Logical AND, OR, NOT.
 

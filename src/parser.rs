@@ -69,41 +69,6 @@ pub mod par_ast {
     }
 
     impl Literal {
-        pub fn is_int(&self) -> bool {
-            match self {
-                Literal::Int(_) => true,
-                _ => false,
-            }
-        }
-
-        pub fn is_float(&self) -> bool {
-            match self {
-                Literal::Float(_) => true,
-                _ => false,
-            }
-        }
-
-        pub fn is_bool(&self) -> bool {
-            match self {
-                Literal::Bool(_) => true,
-                _ => false,
-            }
-        }
-
-        pub fn is_char(&self) -> bool {
-            match self {
-                Literal::Char(_) => true,
-                _ => false,
-            }
-        }
-
-        pub fn is_list(&self) -> bool {
-            match self {
-                Literal::List(_) => true,
-                _ => false,
-            }
-        }
-
         pub fn new_int(value: i64) -> Literal {
             Literal::Int(value)
         }
@@ -134,10 +99,29 @@ pub mod par {
     }
 
     // parses an input vec of tokens into an ast, with root at Code
-    pub fn parse_tokens(tokens: Vec<Token>) -> Code {
+    pub fn parse_tokens(tokens: &mut vec::IntoIter<Token>) -> Code {
         let mut code: Code = vec![];
         unimplemented!();
         code
+    }
+
+    // parses a list of tokens into an Op
+    pub fn parse_op(tokens: &mut vec::IntoIter<Token>) -> Op {
+        let mut iter = tokens.peekable();
+        let op_token = iter.peek().unwrap().to_owned();
+        match op_token.token_type {
+            TokenType::ConstInt
+            | TokenType::ConstFloat
+            | TokenType::ConstChar
+            | TokenType::ConstString
+            | TokenType::ConstBool => Op::new_literal(parse_literal(&op_token)),
+            TokenType::LeftSquare => {
+                // iter.;
+                Op::new_literal(parse_list(tokens, true))
+            }
+            TokenType::Instr => Op::new_instruction(op_token.lexeme),
+            tt => panic!("Parse Error: Unexpected token type {:?} for Op", tt),
+        }
     }
 
     // parses a list of tokens into a list literal
@@ -148,7 +132,7 @@ pub mod par {
         let mut list: Vec<Literal> = vec![];
         let mut ended_last_list = false;
 
-        // skip initioal left square
+        // skip initial left square
         if !nested {
             iter.next();
         }
@@ -175,7 +159,7 @@ pub mod par {
                 }
                 // otherwise, parse the literal and add it to the list
                 _ => {
-                    list.push(parse_literal(token.to_owned()));
+                    list.push(parse_literal(&token));
                 }
             }
         }
@@ -187,7 +171,7 @@ pub mod par {
     }
 
     // parses a literal token into a literal
-    pub fn parse_literal(token: Token) -> Literal {
+    pub fn parse_literal(token: &Token) -> Literal {
         match token.token_type {
             TokenType::ConstInt => Literal::new_int(token.lexeme.parse::<i64>().unwrap()),
             TokenType::ConstFloat => Literal::new_float(token.lexeme.parse::<f64>().unwrap()),
@@ -250,6 +234,13 @@ pub mod par {
                     }
                 }
                 Literal::new_list(string_chars)
+            }
+            TokenType::ConstBool => {
+                if token.lexeme == "true" {
+                    Literal::new_bool(true)
+                } else {
+                    Literal::new_bool(false)
+                }
             }
             _ => panic!(
                 "Parser Error: Unexpected token type {:?} for Literal",
