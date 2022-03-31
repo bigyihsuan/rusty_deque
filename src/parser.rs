@@ -24,20 +24,6 @@ pub mod par_ast {
     }
 
     impl Exec {
-        pub fn is_left(&self) -> bool {
-            match self {
-                Exec::Left(_) => true,
-                _ => false,
-            }
-        }
-
-        pub fn is_right(&self) -> bool {
-            match self {
-                Exec::Right(_) => true,
-                _ => false,
-            }
-        }
-
         pub fn new_left(op: Op) -> Exec {
             Exec::Left(op)
         }

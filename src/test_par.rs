@@ -2,7 +2,6 @@
 mod tests {
 
     use crate::lexer::lex::*;
-    use crate::lexer::lex_token::*;
     use crate::parser::par::*;
     use crate::parser::par_ast::*;
 
