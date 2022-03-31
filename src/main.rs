@@ -1,7 +1,9 @@
 // tests
+mod test_eval;
 mod test_lex;
 mod test_par;
 
+mod evaluator;
 mod lexer;
 mod parser;
 

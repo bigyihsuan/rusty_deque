@@ -1,19 +1,21 @@
 pub mod par_ast {
+    use std::fmt::Display;
+
     pub type Code = Vec<Exec>;
 
-    #[derive(Debug, PartialEq)]
+    #[derive(Debug, PartialEq, Clone)]
     pub enum Exec {
         Left(Op),
         Right(Op),
     }
 
-    #[derive(Debug, PartialEq)]
+    #[derive(Debug, PartialEq, Clone)]
     pub enum Op {
         Literal(Literal),
         Instruction(String),
     }
 
-    #[derive(Debug, PartialEq)]
+    #[derive(Debug, PartialEq, Clone)]
     pub enum Literal {
         Int(i64),
         Float(f64),
@@ -33,20 +35,6 @@ pub mod par_ast {
     }
 
     impl Op {
-        pub fn is_literal(&self) -> bool {
-            match self {
-                Op::Literal(_) => true,
-                _ => false,
-            }
-        }
-
-        pub fn is_instruction(&self) -> bool {
-            match self {
-                Op::Instruction(_) => true,
-                _ => false,
-            }
-        }
-
         pub fn new_literal(literal: Literal) -> Op {
             Op::Literal(literal)
         }
@@ -73,6 +61,19 @@ pub mod par_ast {
         }
         pub fn new_block(value: Vec<Exec>) -> Literal {
             Literal::Block(value)
+        }
+    }
+
+    impl Display for Literal {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            match self {
+                Literal::Int(value) => write!(f, "{}", value),
+                Literal::Float(value) => write!(f, "{}", value),
+                Literal::Bool(value) => write!(f, "{}", value),
+                Literal::Char(value) => write!(f, "{}", value),
+                Literal::List(value) => write!(f, "{:?}", value),
+                Literal::Block(value) => write!(f, "{:?}", value),
+            }
         }
     }
 }
