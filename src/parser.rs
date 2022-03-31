@@ -20,6 +20,7 @@ pub mod par_ast {
         Bool(bool),
         Char(char),
         List(Vec<Literal>),
+        Block(Vec<Exec>),
     }
 
     impl Exec {
@@ -83,6 +84,9 @@ pub mod par_ast {
         }
         pub fn new_list(value: Vec<Literal>) -> Literal {
             Literal::List(value)
+        }
+        pub fn new_block(value: Vec<Exec>) -> Literal {
+            Literal::Block(value)
         }
     }
 }
@@ -191,6 +195,49 @@ pub mod par {
             panic!("Parsing Error: Unclosed list");
         }
         Literal::new_list(list)
+    }
+
+    pub fn parse_block(tokens: &mut vec::IntoIter<Token>, nested: bool) -> Literal {
+        let iter = tokens;
+        let mut block: Vec<Literal> = vec![];
+        let mut ended_last_block = false;
+
+        // skip initial left square
+        if !nested {
+            iter.next();
+        }
+        while let Some(token) = iter.next() {
+            // panic if the input ends before a closing square bracket
+            println!("current token: {:?}", token);
+            match token.token_type {
+                // if see another list, recurse into another list
+                TokenType::LeftSquare => {
+                    println!("    making nested block at {:?}", token);
+                    ended_last_block = false;
+                    // make a new list
+                    block.push(parse_block(iter, true));
+                }
+                // ignore commas
+                TokenType::Comma => {
+                    continue;
+                }
+                // finish the current list
+                TokenType::RightSquare => {
+                    println!("    closing this block");
+                    ended_last_block = true;
+                    break;
+                }
+                // otherwise, parse the literal and add it to the list
+                _ => {
+                    block.push(parse_exec(&iter));
+                }
+            }
+        }
+        // if the list did not close, panic
+        if !ended_last_block {
+            panic!("Parsing Error: Unclosed block");
+        }
+        Literal::new_list(block)
     }
 
     // parses a literal token into a literal

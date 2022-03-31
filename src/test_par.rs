@@ -535,4 +535,21 @@ mod tests {
             assert_eq!(expected, &exec);
         }
     }
+
+    #[test]
+    fn test_par_block() {
+        let input_str = String::from("{1~ 2! 3~}");
+        let tokens = tokenize_code(&input_str);
+        println!("{:?}", &tokens);
+        let block = parse_block(&mut tokens.into_iter());
+        println!("{:?}\n", block);
+        assert_eq!(
+            Literal::Block(vec![
+                Exec::Right(Op::Literal(Literal::Int(1))),
+                Exec::Left(Op::Literal(Literal::Int(2))),
+                Exec::Right(Op::Literal(Literal::Int(3))),
+            ]),
+            &block
+        );
+    }
 }
