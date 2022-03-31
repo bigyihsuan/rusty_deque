@@ -105,6 +105,20 @@ pub mod par {
         code
     }
 
+    // parses a list of tokens into an Exec
+    pub fn parse_exec(tokens: &mut vec::IntoIter<Token>) -> Exec {
+        let op = parse_op(tokens);
+        let sigil = tokens.next().unwrap();
+        match sigil.token_type {
+            TokenType::Bang => Exec::new_left(op),
+            TokenType::Tilde => Exec::new_right(op),
+            _ => panic!(
+                "Parser Error: Expected sigil Bang or Tilde, instead got {:?}",
+                sigil.token_type
+            ),
+        }
+    }
+
     // parses a list of tokens into an Op
     pub fn parse_op(tokens: &mut vec::IntoIter<Token>) -> Op {
         let mut iter = tokens.peekable();

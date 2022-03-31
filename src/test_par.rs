@@ -439,4 +439,99 @@ mod tests {
             assert_eq!(expected, &op);
         }
     }
+
+    #[test]
+    #[should_panic]
+    fn test_par_exec_fail() {
+        let input_str = String::from("[1, 2, 3]not");
+        let tokens = tokenize_code(&input_str);
+        println!("{:?}", &tokens);
+        parse_exec(&mut tokens.into_iter());
+    }
+
+    #[test]
+    fn test_par_exec_left() {
+        let input_strings = vec![
+            String::from("1!"),
+            String::from("\"hello\"!"),
+            String::from("[1, 2, 3]!"),
+            String::from("true!"),
+            String::from("false!"),
+            String::from("ol!"),
+            String::from("hello!"),
+            String::from("+!"),
+        ];
+        let expected = vec![
+            Exec::Left(Op::Literal(Literal::Int(1))),
+            Exec::Left(Op::Literal(Literal::List(vec![
+                Literal::Char('h'),
+                Literal::Char('e'),
+                Literal::Char('l'),
+                Literal::Char('l'),
+                Literal::Char('o'),
+            ]))),
+            Exec::Left(Op::Literal(Literal::List(vec![
+                Literal::Int(1),
+                Literal::Int(2),
+                Literal::Int(3),
+            ]))),
+            Exec::Left(Op::Literal(Literal::Bool(true))),
+            Exec::Left(Op::Literal(Literal::Bool(false))),
+            Exec::Left(Op::Instruction(String::from("ol"))),
+            Exec::Left(Op::Instruction(String::from("hello"))),
+            Exec::Left(Op::Instruction(String::from("+"))),
+        ];
+
+        for (input_str, expected) in input_strings.iter().zip(expected.iter()) {
+            println!("{}", input_str);
+            let tokens = tokenize_code(input_str);
+            println!("{:?}", &tokens);
+            let exec = parse_exec(&mut tokens.into_iter());
+            println!("{:?}\n", exec);
+            assert_eq!(expected, &exec);
+        }
+    }
+
+    #[test]
+    fn test_par_exec_right() {
+        let input_strings = vec![
+            String::from("1~"),
+            String::from("\"hello\"~"),
+            String::from("[1, 2, 3]~"),
+            String::from("true~"),
+            String::from("false~"),
+            String::from("ol~"),
+            String::from("hello~"),
+            String::from("+~"),
+        ];
+        let expected = vec![
+            Exec::Right(Op::Literal(Literal::Int(1))),
+            Exec::Right(Op::Literal(Literal::List(vec![
+                Literal::Char('h'),
+                Literal::Char('e'),
+                Literal::Char('l'),
+                Literal::Char('l'),
+                Literal::Char('o'),
+            ]))),
+            Exec::Right(Op::Literal(Literal::List(vec![
+                Literal::Int(1),
+                Literal::Int(2),
+                Literal::Int(3),
+            ]))),
+            Exec::Right(Op::Literal(Literal::Bool(true))),
+            Exec::Right(Op::Literal(Literal::Bool(false))),
+            Exec::Right(Op::Instruction(String::from("ol"))),
+            Exec::Right(Op::Instruction(String::from("hello"))),
+            Exec::Right(Op::Instruction(String::from("+"))),
+        ];
+
+        for (input_str, expected) in input_strings.iter().zip(expected.iter()) {
+            println!("{}", input_str);
+            let tokens = tokenize_code(input_str);
+            println!("{:?}", &tokens);
+            let exec = parse_exec(&mut tokens.into_iter());
+            println!("{:?}\n", exec);
+            assert_eq!(expected, &exec);
+        }
+    }
 }
