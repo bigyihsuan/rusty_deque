@@ -116,10 +116,10 @@ pub mod par {
     // parses a list of tokens into an Exec
     pub fn parse_exec(tokens: &mut vec::IntoIter<Token>) -> Exec {
         println!("parse_exec {:?}", &tokens);
-
         let op = parse_op(tokens);
         let mut iter = tokens.peekable();
         let sigil = iter.peek().unwrap();
+        println!("    exec sigil {:?}", &sigil);
         match sigil.token_type {
             TokenType::Bang => Exec::new_left(op),
             TokenType::Tilde => Exec::new_right(op),
@@ -136,16 +136,15 @@ pub mod par {
 
         let mut iter = tokens.peekable();
         let op_token = iter.peek().unwrap().to_owned();
+        println!("    op_token {:?}", &op_token);
         match op_token.token_type {
             TokenType::ConstInt
             | TokenType::ConstFloat
             | TokenType::ConstChar
             | TokenType::ConstString
             | TokenType::ConstBool => Op::new_literal(parse_literal(&op_token)),
-            TokenType::LeftSquare => {
-                // iter.;
-                Op::new_literal(parse_list(tokens, true))
-            }
+            TokenType::LeftSquare => Op::new_literal(parse_list(tokens, true)),
+            TokenType::LeftCurly => Op::new_literal(parse_block(tokens, false)),
             TokenType::Instr => Op::new_instruction(op_token.lexeme),
             tt => panic!("Parse Error: Unexpected token type {:?} for Op", tt),
         }
@@ -198,46 +197,37 @@ pub mod par {
     }
 
     pub fn parse_block(tokens: &mut vec::IntoIter<Token>, nested: bool) -> Literal {
+        println!("parse_block {:?}", &tokens);
         let iter = tokens;
-        let mut block: Vec<Literal> = vec![];
+        let mut block: Vec<Exec> = vec![];
         let mut ended_last_block = false;
-
-        // skip initial left square
         if !nested {
             iter.next();
         }
-        while let Some(token) = iter.next() {
-            // panic if the input ends before a closing square bracket
-            println!("current token: {:?}", token);
+        while let Some(token) = iter.peekable().peek() {
             match token.token_type {
-                // if see another list, recurse into another list
-                TokenType::LeftSquare => {
+                TokenType::LeftCurly => {
                     println!("    making nested block at {:?}", token);
                     ended_last_block = false;
-                    // make a new list
-                    block.push(parse_block(iter, true));
+                    block.push(parse_exec(iter));
                 }
-                // ignore commas
                 TokenType::Comma => {
                     continue;
                 }
-                // finish the current list
-                TokenType::RightSquare => {
+                TokenType::RightCurly => {
                     println!("    closing this block");
                     ended_last_block = true;
                     break;
                 }
-                // otherwise, parse the literal and add it to the list
                 _ => {
-                    block.push(parse_exec(&iter));
+                    block.push(parse_exec(iter));
                 }
             }
         }
-        // if the list did not close, panic
         if !ended_last_block {
             panic!("Parsing Error: Unclosed block");
         }
-        Literal::new_list(block)
+        Literal::new_block(block)
     }
 
     // parses a literal token into a literal
