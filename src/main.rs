@@ -10,7 +10,7 @@ fn main() {
     );
     println!("{}", input_str);
     let tokens = lexer::lex::tokenize_code(&input_str);
-    println!("{:?}", &tokens);
+    // println!("{:?}", &tokens);
     let ast = parser::par::parse_tokens(&mut tokens.into_iter());
-    println!("{:?}", ast);
+    println!("{:#?}", ast);
 }

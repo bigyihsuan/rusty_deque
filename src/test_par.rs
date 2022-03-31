@@ -552,4 +552,26 @@ mod tests {
 
         assert_eq!(expected, block);
     }
+
+    #[test]
+    fn test_par_block_nested() {
+        let input_str = String::from("{1~ {dup~ 2! rot~ <!}~ 3~}!");
+        let tokens = tokenize_code(&input_str);
+        println!("{:?}", &tokens);
+        let block = parse_exec(&mut tokens.into_iter());
+        println!("{:?}\n", block);
+
+        let expected = Exec::Left(Op::Literal(Literal::Block(vec![
+            Exec::Right(Op::Literal(Literal::Int(1))),
+            Exec::Right(Op::Literal(Literal::Block(vec![
+                Exec::Right(Op::Instruction(String::from("dup"))),
+                Exec::Left(Op::Literal(Literal::Int(2))),
+                Exec::Right(Op::Instruction(String::from("rot"))),
+                Exec::Left(Op::Instruction(String::from("<"))),
+            ]))),
+            Exec::Right(Op::Literal(Literal::Int(3))),
+        ])));
+
+        assert_eq!(expected, block);
+    }
 }
