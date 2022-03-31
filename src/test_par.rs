@@ -6,10 +6,11 @@ mod tests {
     use crate::parser::par::*;
     use crate::parser::par_ast::*;
 
-    //#[test]
+    #[test]
     fn test_par_hello_world() {
-        let input_str = String::from("\"Hello World!\"~ ow~");
+        let input_str = String::from("\"Hello World!\"~ ow!");
         let tokens = tokenize_code(&input_str);
+        println!("Tokens: {:?}", tokens);
         let code = parse_tokens(&mut tokens.into_iter());
 
         let expected = vec![
@@ -27,7 +28,7 @@ mod tests {
                 Literal::Char('d'),
                 Literal::Char('!'),
             ]))),
-            Exec::Right(Op::Instruction(String::from("ow"))),
+            Exec::Left(Op::Instruction(String::from("ow"))),
         ];
 
         println!("{:?}", code);

@@ -100,15 +100,22 @@ pub mod par {
 
     // parses an input vec of tokens into an ast, with root at Code
     pub fn parse_tokens(tokens: &mut vec::IntoIter<Token>) -> Code {
-        let mut code: Code = vec![];
-        unimplemented!();
+        let mut code: Code = Vec::new();
+        // while ther are tokens left, parse execs by calling parse_exec
+        while tokens.into_iter().len() > 0 {
+            let exec = parse_exec(tokens);
+            code.push(exec);
+        }
         code
     }
 
     // parses a list of tokens into an Exec
     pub fn parse_exec(tokens: &mut vec::IntoIter<Token>) -> Exec {
+        println!("parse_exec {:?}", &tokens);
+
         let op = parse_op(tokens);
-        let sigil = tokens.next().unwrap();
+        let mut iter = tokens.peekable();
+        let sigil = iter.peek().unwrap();
         match sigil.token_type {
             TokenType::Bang => Exec::new_left(op),
             TokenType::Tilde => Exec::new_right(op),
@@ -121,6 +128,8 @@ pub mod par {
 
     // parses a list of tokens into an Op
     pub fn parse_op(tokens: &mut vec::IntoIter<Token>) -> Op {
+        println!("parse_op {:?}", &tokens);
+
         let mut iter = tokens.peekable();
         let op_token = iter.peek().unwrap().to_owned();
         match op_token.token_type {

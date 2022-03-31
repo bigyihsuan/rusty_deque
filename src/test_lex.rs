@@ -306,21 +306,6 @@ mod tests {
             }
         );
 
-        println!("Testing tokenizing Instr {}", "true");
-        assert_eq!(
-            get_next_token(&String::from("true"), 0, 0).0,
-            Token {
-                token_type: TokenType::Instr,
-                lexeme: String::from("true"),
-                error_msg: String::new(),
-                line: 0,
-                start: 0,
-                end: 4,
-            }
-        );
-
-        println!("Testing tokenizing Instr {}", "false");
-
         println!("Testing tokenizing Instr {}", "-");
         assert_eq!(
             get_next_token(&String::from("-"), 0, 0).0,
@@ -609,7 +594,7 @@ mod tests {
                 end: 13,
             },
             Token {
-                token_type: TokenType::Instr,
+                token_type: TokenType::ConstBool,
                 lexeme: String::from("true"),
                 error_msg: String::new(),
                 line: 0,
@@ -625,7 +610,7 @@ mod tests {
                 end: 19,
             },
             Token {
-                token_type: TokenType::Instr,
+                token_type: TokenType::ConstBool,
                 lexeme: String::from("false"),
                 error_msg: String::new(),
                 line: 0,
