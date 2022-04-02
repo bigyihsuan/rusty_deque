@@ -8,6 +8,7 @@ mod test_par;
 mod evaluator;
 mod lexer;
 mod parser;
+use evaluator::eval_value::*;
 
 fn main() {
     // let input_str = String::from(
@@ -84,7 +85,7 @@ fn main() {
     } else if filename.is_empty() {
         // if no filename, but expr, run expr
         if !expr.is_empty() {
-            run_code(expr);
+            run_code(Option::None, expr, print_tokens, print_ast, print_stack);
             std::process::exit(0);
         } else {
             println!("no expression specified");
@@ -95,7 +96,7 @@ fn main() {
         // if filename, run file
         // read from file
         let contents = std::fs::read_to_string(filename).expect("file not found");
-        run_code(contents);
+        run_code(Option::None, contents, print_tokens, print_ast, print_stack);
         std::process::exit(0);
     }
 }
@@ -109,35 +110,51 @@ pub fn print_usage() {
     println!("-c <expr>: evaluate this expression");
 }
 
-pub fn run_code(code: String) {
+pub fn run_code(
+    deque: Option<VecDeque<Value>>,
+    code: String,
+    print_tokens: bool,
+    print_ast: bool,
+    print_stack: bool,
+) -> VecDeque<Value> {
+    // lex
     let tokens = lexer::lex::tokenize_code(&code);
+    if print_tokens {
+        println!("{:?}", &tokens);
+    }
+    // parse
     let ast = parser::par::parse_tokens(&mut tokens.into_iter());
-    evaluator::eval::run_ast(Option::None, ast);
+    if print_ast {
+        println!("{:#?}", ast);
+    }
+    // run
+    let deque = evaluator::eval::run_ast(deque, ast);
+    if print_stack {
+        println!("{:?}", deque);
+    }
+    deque
 }
 
 pub fn repl(print_tokens: bool, print_ast: bool, print_stack: bool) {
-    let deque: &mut VecDeque<evaluator::eval_value::Value> = &mut std::collections::VecDeque::new();
+    let mut deque: VecDeque<evaluator::eval_value::Value> = std::collections::VecDeque::new();
     loop {
         // print the prompt
         print!(">>> ");
         std::io::stdout().flush().unwrap();
         // get input
         let mut input = String::new();
-        std::io::stdin().read_line(&mut input).unwrap();
-        // lex
-        let tokens = lexer::lex::tokenize_code(&input);
-        if print_tokens {
-            println!("{:?}", &tokens);
-        }
-        // parse
-        let ast = parser::par::parse_tokens(&mut tokens.into_iter());
-        if print_ast {
-            println!("{:#?}", ast);
-        }
-        // run
-        evaluator::eval::run_ast(Some(deque), ast);
-        if print_stack {
-            println!("{:?}", deque);
+        let result = std::io::stdin().read_line(&mut input);
+        match result {
+            Ok(size) => {
+                if size <= 0 {
+                    println!("");
+                    return;
+                }
+                deque = run_code(Some(deque), input, print_tokens, print_ast, print_stack);
+            }
+            Err(_) => {
+                return;
+            }
         }
     }
 }

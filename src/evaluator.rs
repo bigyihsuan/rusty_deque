@@ -14,6 +14,18 @@ pub mod eval_instr {
     use crate::parser::par_ast::*;
     use std::collections::VecDeque;
 
+    // DEQUE OPS
+    pub fn pop(deque: &mut VecDeque<Value>, place: Place) {
+        match place {
+            Place::Left => {
+                deque.pop_front();
+            }
+            Place::Right => {
+                deque.pop_back();
+            }
+        }
+    }
+
     pub fn dup(stack: &mut VecDeque<Value>, place: Place) {
         let literal = match place {
             Place::Left => stack.pop_front().unwrap(),
@@ -22,6 +34,35 @@ pub mod eval_instr {
         stack.push_front(literal.clone());
         stack.push_front(literal);
     }
+
+    pub fn rot(deque: &mut VecDeque<Value>, place: Place) {
+        match place {
+            Place::Left => {
+                deque.rotate_left(1);
+            }
+            Place::Right => {
+                deque.rotate_right(1);
+            }
+        }
+    }
+
+    pub fn over(deque: &mut VecDeque<Value>, place: Place) {
+        let mut iter = deque.iter();
+        match place {
+            Place::Left => {
+                iter.next();
+                let ele = iter.next().unwrap().clone();
+                deque.push_front(ele);
+            }
+            Place::Right => {
+                iter.next_back();
+                let ele = iter.next_back().unwrap().clone();
+                deque.push_back(ele);
+            }
+        }
+    }
+
+    // IO
 
     pub fn ol(stack: &mut VecDeque<Value>, place: Place) {
         let literal = match place {
@@ -98,9 +139,9 @@ pub mod eval {
 
     use std::collections::VecDeque;
 
-    pub fn run_ast(deque: Option<&mut VecDeque<Value>>, ast: Code) {
-        let temp: &mut VecDeque<Value> = &mut VecDeque::new();
-        let mut d: &mut VecDeque<Value> = deque.unwrap_or(temp);
+    pub fn run_ast(deque: Option<VecDeque<Value>>, ast: Code) -> VecDeque<Value> {
+        let temp: VecDeque<Value> = VecDeque::new();
+        let d: &mut VecDeque<Value> = &mut deque.unwrap_or(temp);
 
         for exec in ast {
             match exec {
@@ -108,21 +149,27 @@ pub mod eval {
                     Op::Literal(lit) => {
                         d.push_front(lit);
                     }
-                    Op::Instruction(instruction) => call_instr(&mut d, instruction, Place::Left),
+                    Op::Instruction(instruction) => call_instr(d, instruction, Place::Left),
                 },
                 Exec::Right(op) => match op {
                     Op::Literal(lit) => {
                         d.push_back(lit);
                     }
-                    Op::Instruction(instruction) => call_instr(&mut d, instruction, Place::Right),
+                    Op::Instruction(instruction) => call_instr(d, instruction, Place::Right),
                 },
             }
         }
+        d.to_owned()
     }
 
     pub fn call_instr(deque: &mut VecDeque<Value>, instr: String, place: Place) {
         match instr.as_str() {
+            // DEQUE OPS
+            "pop" => pop(deque, place),
             "dup" => dup(deque, place),
+            "rot" => rot(deque, place),
+            "over" => over(deque, place),
+            // IO
             "ol" => ol(deque, place),
             "ow" => ow(deque, place),
             _ => panic!("Unknown instruction: {}", instr),
