@@ -14,6 +14,10 @@ pub mod eval_instr {
     use crate::parser::par_ast::*;
     use std::collections::VecDeque;
 
+    fn type_of<T>(_: &T) -> String {
+        format!("{}", std::any::type_name::<T>())
+    }
+
     // DEQUE OPS
     pub fn pop(deque: &mut VecDeque<Value>, place: Place) {
         match place {
@@ -58,6 +62,112 @@ pub mod eval_instr {
                 iter.next_back();
                 let ele = iter.next_back().unwrap().clone();
                 deque.push_back(ele);
+            }
+        }
+    }
+
+    // INT/FLOAT OPS
+    pub fn add(deque: &mut VecDeque<Value>, place: Place) {
+        // if any of the values are not ints or floats, error
+        // if any are floats, convert the other to a float and add
+        let mut iter = deque.iter();
+        match place {
+            Place::Left => {
+                let a = iter.next().unwrap().clone();
+                let b = iter.next().unwrap().clone();
+                deque.pop_front();
+                deque.pop_front();
+                match (a, b) {
+                    (Literal::Int(a), Literal::Int(b)) => {
+                        deque.push_front(Literal::Int(a + b));
+                    }
+                    (Literal::Int(a), Literal::Float(b)) => {
+                        deque.push_front(Literal::Float(a as f64 + b));
+                    }
+                    (Literal::Float(a), Literal::Int(b)) => {
+                        deque.push_front(Literal::Float(a + b as f64));
+                    }
+                    (Literal::Float(a), Literal::Float(b)) => {
+                        deque.push_front(Literal::Float(a + b));
+                    }
+                    _ => {
+                        panic!("invalid operands for addition");
+                    }
+                }
+            }
+            Place::Right => {
+                let a = iter.next_back().unwrap().clone();
+                let b = iter.next_back().unwrap().clone();
+                deque.pop_back();
+                deque.pop_back();
+                match (a, b) {
+                    (Literal::Int(a), Literal::Int(b)) => {
+                        deque.push_back(Literal::Int(a + b));
+                    }
+                    (Literal::Int(a), Literal::Float(b)) => {
+                        deque.push_back(Literal::Float(a as f64 + b));
+                    }
+                    (Literal::Float(a), Literal::Int(b)) => {
+                        deque.push_back(Literal::Float(a + b as f64));
+                    }
+                    (Literal::Float(a), Literal::Float(b)) => {
+                        deque.push_back(Literal::Float(a + b));
+                    }
+                    _ => {
+                        panic!("invalid operands for addition");
+                    }
+                }
+            }
+        }
+    }
+    pub fn sub(deque: &mut VecDeque<Value>, place: Place) {
+        let mut iter = deque.iter();
+        match place {
+            Place::Left => {
+                let a = iter.next().unwrap().clone();
+                let b = iter.next().unwrap().clone();
+                deque.pop_front();
+                deque.pop_front();
+                match (a, b) {
+                    (Literal::Int(a), Literal::Int(b)) => {
+                        deque.push_front(Literal::Int(a - b));
+                    }
+                    (Literal::Int(a), Literal::Float(b)) => {
+                        deque.push_front(Literal::Float(a as f64 - b));
+                    }
+                    (Literal::Float(a), Literal::Int(b)) => {
+                        deque.push_front(Literal::Float(a - b as f64));
+                    }
+                    (Literal::Float(a), Literal::Float(b)) => {
+                        deque.push_front(Literal::Float(a - b));
+                    }
+                    _ => {
+                        panic!("invalid operands for addition");
+                    }
+                }
+            }
+            Place::Right => {
+                let a = iter.next_back().unwrap().clone();
+                let b = iter.next_back().unwrap().clone();
+                deque.pop_back();
+                deque.pop_back();
+                match (a, b) {
+                    (Literal::Int(a), Literal::Int(b)) => {
+                        deque.push_back(Literal::Int(a - b));
+                    }
+                    (Literal::Int(a), Literal::Float(b)) => {
+                        deque.push_back(Literal::Float(a as f64 - b));
+                    }
+                    (Literal::Float(a), Literal::Int(b)) => {
+                        deque.push_back(Literal::Float(a - b as f64));
+                    }
+                    (Literal::Float(a), Literal::Float(b)) => {
+                        deque.push_back(Literal::Float(a - b));
+                    }
+                    _ => {
+                        panic!("invalid operands for addition");
+                    }
+                }
             }
         }
     }
@@ -165,10 +275,13 @@ pub mod eval {
     pub fn call_instr(deque: &mut VecDeque<Value>, instr: String, place: Place) {
         match instr.as_str() {
             // DEQUE OPS
-            "pop" => pop(deque, place),
-            "dup" => dup(deque, place),
-            "rot" => rot(deque, place),
-            "over" => over(deque, place),
+            "pop" | "$" => pop(deque, place),
+            "dup" | ":" => dup(deque, place),
+            "rot" | "@" => rot(deque, place),
+            "over" | "^" => over(deque, place),
+            // INT/FLOAT OPS
+            "+" => add(deque, place),
+
             // IO
             "ol" => ol(deque, place),
             "ow" => ow(deque, place),

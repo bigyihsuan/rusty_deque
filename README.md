@@ -119,6 +119,7 @@ It tries to do integer operations by default; if any arguments are a float, it p
 * `*`: Product.
 * `/`: Integer Division. Discards the arguments if the second element is 0.
 * `//`: Float Division. Discards the arguments if the second element is 0.
+* `%`: Remainder. Discards the arguments if the second element is 0.
 * `exp`: `(a b -- a^b)` Pops 2 `a` and `b`, pushes the exponent `a^b`.
 * `log`: `(a b -- log_a[b])` Pops 2 `a` and `b`, pushes the logarithm `log_a(b)`.
 * `--`: Negation.
