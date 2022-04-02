@@ -9,7 +9,7 @@ mod tests {
         let tokens = tokenize_code(&input_str);
         let ast = parse_tokens(&mut tokens.into_iter());
         println!("{:#?}", ast);
-        run_ast(ast);
+        run_ast(Option::None, ast);
     }
 
     #[test]
@@ -18,7 +18,7 @@ mod tests {
         let tokens = tokenize_code(&input_str);
         let ast = parse_tokens(&mut tokens.into_iter());
         println!("{:#?}", ast);
-        run_ast(ast);
+        run_ast(Option::None, ast);
     }
 
     #[test]
@@ -27,6 +27,6 @@ mod tests {
         let tokens = tokenize_code(&input_str);
         let ast = parse_tokens(&mut tokens.into_iter());
         println!("{:#?}", ast);
-        run_ast(ast);
+        run_ast(Option::None, ast);
     }
 }

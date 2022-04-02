@@ -12,9 +12,9 @@ pub mod eval_value {
 pub mod eval_instr {
     use super::eval_value::*;
     use crate::parser::par_ast::*;
-    use std::{collections::VecDeque, fmt::format};
+    use std::collections::VecDeque;
 
-    pub fn dup(stack: VecDeque<Value>, place: Place) {
+    pub fn dup(stack: &mut VecDeque<Value>, place: Place) {
         let literal = match place {
             Place::Left => stack.pop_front().unwrap(),
             Place::Right => stack.pop_back().unwrap(),
@@ -23,13 +23,71 @@ pub mod eval_instr {
         stack.push_front(literal);
     }
 
-    pub fn ol(stack: VecDeque<Value>, place: Place) {
+    pub fn ol(stack: &mut VecDeque<Value>, place: Place) {
         let literal = match place {
             Place::Left => stack.pop_front().unwrap(),
             Place::Right => stack.pop_back().unwrap(),
         };
-        let value = format!("{}", literal);
-        println!("{}", value);
+        // if all elements in literal are Literal::Char, then print them in double quotes instead of as a list
+        let mut is_char_list = true;
+        match literal {
+            Literal::List(ref list) => {
+                for elem in list.iter() {
+                    if let Literal::Char(_) = elem {
+                        continue;
+                    } else {
+                        is_char_list = false;
+                        break;
+                    }
+                }
+                if is_char_list {
+                    let mut chars = String::new();
+                    for elem in list.iter() {
+                        if let Literal::Char(c) = elem {
+                            chars.push(*c);
+                        }
+                    }
+                    println!("{}", chars);
+                } else {
+                    println!("{}", literal.to_string());
+                }
+            }
+            _ => println!("{}", literal.to_string()),
+        };
+    }
+
+    // pretty much the same as ol, consider consolidating
+    pub fn ow(stack: &mut VecDeque<Value>, place: Place) {
+        let literal = match place {
+            Place::Left => stack.pop_front().unwrap(),
+            Place::Right => stack.pop_back().unwrap(),
+        };
+        // if all elements in literal are Literal::Char, then print them in double quotes instead of as a list
+        let mut is_char_list = true;
+        match literal {
+            Literal::List(ref list) => {
+                for elem in list.iter() {
+                    if let Literal::Char(_) = elem {
+                        continue;
+                    } else {
+                        is_char_list = false;
+                        break;
+                    }
+                }
+                if is_char_list {
+                    let mut chars = String::new();
+                    for elem in list.iter() {
+                        if let Literal::Char(c) = elem {
+                            chars.push(*c);
+                        }
+                    }
+                    print!("{}", chars);
+                } else {
+                    print!("{}", literal.to_string());
+                }
+            }
+            _ => print!("{}", literal.to_string()),
+        };
     }
 }
 
@@ -38,50 +96,36 @@ pub mod eval {
     use crate::evaluator::eval_instr::*;
     use crate::parser::par_ast::*;
 
-    use std::collections::{HashMap, VecDeque};
+    use std::collections::VecDeque;
 
-    // https://stackoverflow.com/a/27582993/8143168
-    macro_rules! collection {
-        // map-like
-        ($($k:expr => $v:expr),* $(,)?) => {{
-            core::convert::From::from([$(($k, $v),)*])
-        }};
-        // set-like
-        ($($v:expr),* $(,)?) => {{
-            core::convert::From::from([$($v,)*])
-        }};
-    }
-
-    const instruction_code: HashMap<String, fn(&mut VecDeque<Value>, Place)> = collection![
-        "dup" => crate::evaluator::eval_instr::dup
-    ];
-
-    pub fn run_ast(ast: Code) {
-        let mut deque: VecDeque<Value> = VecDeque::new();
+    pub fn run_ast(deque: Option<&mut VecDeque<Value>>, ast: Code) {
+        let temp: &mut VecDeque<Value> = &mut VecDeque::new();
+        let mut d: &mut VecDeque<Value> = deque.unwrap_or(temp);
 
         for exec in ast {
             match exec {
                 Exec::Left(op) => match op {
                     Op::Literal(lit) => {
-                        deque.push_front(lit);
+                        d.push_front(lit);
                     }
-                    Op::Instruction(instruction) => {
-                        unimplemented!("{:?}", instruction);
-                    }
+                    Op::Instruction(instruction) => call_instr(&mut d, instruction, Place::Left),
                 },
                 Exec::Right(op) => match op {
                     Op::Literal(lit) => {
-                        deque.push_back(lit);
+                        d.push_back(lit);
                     }
-                    Op::Instruction(instruction) => {
-                        unimplemented!("{:?}", instruction);
-                    }
+                    Op::Instruction(instruction) => call_instr(&mut d, instruction, Place::Right),
                 },
             }
         }
+    }
 
-        for value in deque {
-            println!("{:?}", value);
+    pub fn call_instr(deque: &mut VecDeque<Value>, instr: String, place: Place) {
+        match instr.as_str() {
+            "dup" => dup(deque, place),
+            "ol" => ol(deque, place),
+            "ow" => ow(deque, place),
+            _ => panic!("Unknown instruction: {}", instr),
         }
     }
 }

@@ -1,0 +1,2 @@
+# given an int n (n -- n!)
+{dup~ 2! rot~ <!}~ rot~ {pop! 1!}! {dup~ 1~ -~ 2! -1! {in~ *!}! rot~ for~}! rot~ ite~

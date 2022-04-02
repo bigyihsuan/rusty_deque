@@ -9,10 +9,44 @@ pub mod par_ast {
         Right(Op),
     }
 
+    impl Exec {
+        pub fn new_left(op: Op) -> Exec {
+            Exec::Left(op)
+        }
+        pub fn new_right(op: Op) -> Exec {
+            Exec::Right(op)
+        }
+    }
+
+    impl Display for Exec {
+        fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+            match self {
+                Exec::Left(op) => write!(f, "{}", op.to_string()),
+                Exec::Right(op) => write!(f, "{}", op.to_string()),
+            }
+        }
+    }
+
     #[derive(Debug, PartialEq, Clone)]
     pub enum Op {
         Literal(Literal),
         Instruction(String),
+    }
+
+    impl Op {
+        pub fn new_literal(literal: Literal) -> Op {
+            Op::Literal(literal)
+        }
+        pub fn new_instruction(instruction: String) -> Op {
+            Op::Instruction(instruction)
+        }
+
+        pub fn to_string(&self) -> String {
+            match self {
+                Op::Literal(literal) => literal.clone().to_string(),
+                Op::Instruction(instruction) => instruction.clone(),
+            }
+        }
     }
 
     #[derive(Debug, PartialEq, Clone)]
@@ -23,24 +57,6 @@ pub mod par_ast {
         Char(char),
         List(Vec<Literal>),
         Block(Vec<Exec>),
-    }
-
-    impl Exec {
-        pub fn new_left(op: Op) -> Exec {
-            Exec::Left(op)
-        }
-        pub fn new_right(op: Op) -> Exec {
-            Exec::Right(op)
-        }
-    }
-
-    impl Op {
-        pub fn new_literal(literal: Literal) -> Op {
-            Op::Literal(literal)
-        }
-        pub fn new_instruction(instruction: String) -> Op {
-            Op::Instruction(instruction)
-        }
     }
 
     impl Literal {
@@ -62,20 +78,79 @@ pub mod par_ast {
         pub fn new_block(value: Vec<Exec>) -> Literal {
             Literal::Block(value)
         }
-    }
 
-    impl Display for Literal {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        pub fn to_string(self) -> String {
             match self {
-                Literal::Int(value) => write!(f, "{}", value),
-                Literal::Float(value) => write!(f, "{}", value),
-                Literal::Bool(value) => write!(f, "{}", value),
-                Literal::Char(value) => write!(f, "{}", value),
-                Literal::List(value) => write!(f, "{:?}", value),
-                Literal::Block(value) => write!(f, "{:?}", value),
+                Literal::Int(i) => i.to_string(),
+                Literal::Float(f) => f.to_string(),
+                Literal::Bool(b) => b.to_string(),
+                Literal::Char(c) => format!("'{}'", c),
+                Literal::List(ref l) => {
+                    let mut is_char_list = true;
+                    for elem in l.iter() {
+                        if let Literal::Char(_) = elem {
+                            continue;
+                        } else {
+                            is_char_list = false;
+                            break;
+                        }
+                    }
+                    if is_char_list {
+                        let mut chars = '"'.to_string();
+                        for elem in l.iter() {
+                            if let Literal::Char(c) = elem {
+                                chars.push(*c);
+                            }
+                        }
+                        chars.push('"');
+                        chars
+                    } else {
+                        // extract each element in the list
+                        // and put it in square brackets, comma separated
+                        let mut s = "[".to_string();
+                        for lit in l {
+                            s.push_str(&lit.clone().to_string());
+                            s.push_str(", ");
+                        }
+                        s.push_str("]");
+                        s
+                    }
+                }
+                Literal::Block(b) => {
+                    // do the same thing as list, but execs print their lexeme and sigil
+                    let mut s = "{".to_string();
+                    for exec in b {
+                        match exec {
+                            Exec::Left(op) => {
+                                s.push_str(op.to_string().as_str());
+                                s.push_str("!");
+                            }
+                            Exec::Right(op) => {
+                                s.push_str(op.to_string().as_str());
+                                s.push_str("~");
+                            }
+                        }
+                        s.push_str(" ");
+                    }
+                    s.push_str("}");
+                    s
+                }
             }
         }
     }
+
+    // impl Display for Literal {
+    //     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    //         match self {
+    //             Literal::Int(value) => write!(f, "{}", value),
+    //             Literal::Float(value) => write!(f, "{}", value),
+    //             Literal::Bool(value) => write!(f, "{}", value),
+    //             Literal::Char(value) => write!(f, "{}", value),
+    //             Literal::List(value) => write!(f, "{:?}", value),
+    //             Literal::Block(value) => write!(f, "{:?}", value),
+    //         }
+    //     }
+    // }
 }
 
 pub mod par {
@@ -83,11 +158,6 @@ pub mod par {
     use crate::lexer::lex_token::{Token, TokenType};
     use crate::parser::par_ast::*;
     use std::vec;
-
-    enum ParserState {
-        Start,
-        InList,
-    }
 
     // parses an input vec of tokens into an ast, with root at Code
     pub fn parse_tokens(tokens: &mut vec::IntoIter<Token>) -> Code {
