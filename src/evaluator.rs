@@ -142,7 +142,7 @@ pub mod eval_instr {
                         deque.push_front(Literal::Float(a - b));
                     }
                     _ => {
-                        panic!("invalid operands for addition");
+                        panic!("invalid operands for subtraction");
                     }
                 }
             }
@@ -165,7 +165,7 @@ pub mod eval_instr {
                         deque.push_back(Literal::Float(a - b));
                     }
                     _ => {
-                        panic!("invalid operands for addition");
+                        panic!("invalid operands for subtraction");
                     }
                 }
             }
@@ -281,6 +281,7 @@ pub mod eval {
             "over" | "^" => over(deque, place),
             // INT/FLOAT OPS
             "+" => add(deque, place),
+            "-" => sub(deque, place),
 
             // IO
             "ol" => ol(deque, place),

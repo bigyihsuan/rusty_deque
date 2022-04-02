@@ -1,14 +1,12 @@
 use std::{collections::VecDeque, io::Write};
 
-// tests
-mod test_eval;
-mod test_lex;
-mod test_par;
-
 mod evaluator;
 mod lexer;
 mod parser;
 use evaluator::eval_value::*;
+
+// tests
+mod tests;
 
 fn main() {
     // let input_str = String::from(
@@ -130,7 +128,15 @@ pub fn run_code(
     // run
     let deque = evaluator::eval::run_ast(deque, ast);
     if print_stack {
-        println!("{:?}", deque);
+        let mut out_str = "(".to_string();
+        let mut deque_iter = deque.iter();
+        for _ in 0..deque.len() {
+            let val = deque_iter.next().unwrap();
+            out_str.push_str(val.clone().to_string().as_str());
+            out_str.push_str(", ");
+        }
+        out_str.push_str(")");
+        println!("{}", out_str);
     }
     deque
 }
