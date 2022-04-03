@@ -14,10 +14,6 @@ pub mod eval_instr {
     use crate::parser::par_ast::*;
     use std::collections::VecDeque;
 
-    fn type_of<T>(_: &T) -> String {
-        format!("{}", std::any::type_name::<T>())
-    }
-
     // DEQUE OPS
     pub fn pop(deque: &mut VecDeque<Value>, place: Place) {
         match place {
@@ -171,6 +167,228 @@ pub mod eval_instr {
             }
         }
     }
+    pub fn mult(deque: &mut VecDeque<Value>, place: Place) {
+        let mut iter = deque.iter();
+        match place {
+            Place::Left => {
+                let a = iter.next().unwrap().clone();
+                let b = iter.next().unwrap().clone();
+                deque.pop_front();
+                deque.pop_front();
+                match (a, b) {
+                    (Literal::Int(a), Literal::Int(b)) => {
+                        deque.push_front(Literal::Int(a * b));
+                    }
+                    (Literal::Int(a), Literal::Float(b)) => {
+                        deque.push_front(Literal::Float(a as f64 * b));
+                    }
+                    (Literal::Float(a), Literal::Int(b)) => {
+                        deque.push_front(Literal::Float(a * b as f64));
+                    }
+                    (Literal::Float(a), Literal::Float(b)) => {
+                        deque.push_front(Literal::Float(a * b));
+                    }
+                    _ => {
+                        panic!("invalid operands for multiplication");
+                    }
+                }
+            }
+            Place::Right => {
+                let a = iter.next_back().unwrap().clone();
+                let b = iter.next_back().unwrap().clone();
+                deque.pop_back();
+                deque.pop_back();
+                match (a, b) {
+                    (Literal::Int(a), Literal::Int(b)) => {
+                        deque.push_back(Literal::Int(a * b));
+                    }
+                    (Literal::Int(a), Literal::Float(b)) => {
+                        deque.push_back(Literal::Float(a as f64 * b));
+                    }
+                    (Literal::Float(a), Literal::Int(b)) => {
+                        deque.push_back(Literal::Float(a * b as f64));
+                    }
+                    (Literal::Float(a), Literal::Float(b)) => {
+                        deque.push_back(Literal::Float(a * b));
+                    }
+                    _ => {
+                        panic!("invalid operands for multiplication");
+                    }
+                }
+            }
+        }
+    }
+    pub fn intdiv(deque: &mut VecDeque<Value>, place: Place) {
+        let mut iter = deque.iter();
+        match place {
+            Place::Left => {
+                let a = iter.next().unwrap().clone();
+                let b = iter.next().unwrap().clone();
+                deque.pop_front();
+                deque.pop_front();
+                if b == Literal::Int(0) || b == Literal::Float(0.0) {
+                    return;
+                }
+                match (a, b) {
+                    (Literal::Int(a), Literal::Int(b)) => {
+                        deque.push_front(Literal::Int((a / b) as i64));
+                    }
+                    (Literal::Int(a), Literal::Float(b)) => {
+                        deque.push_front(Literal::Int((a as f64 / b) as i64));
+                    }
+                    (Literal::Float(a), Literal::Int(b)) => {
+                        deque.push_front(Literal::Int((a / b as f64) as i64));
+                    }
+                    (Literal::Float(a), Literal::Float(b)) => {
+                        deque.push_front(Literal::Int((a / b) as i64));
+                    }
+                    _ => {
+                        panic!("invalid operands for integer division");
+                    }
+                }
+            }
+            Place::Right => {
+                let a = iter.next_back().unwrap().clone();
+                let b = iter.next_back().unwrap().clone();
+                deque.pop_back();
+                deque.pop_back();
+                if b == Literal::Int(0) || b == Literal::Float(0.0) {
+                    return;
+                }
+                match (a, b) {
+                    (Literal::Int(a), Literal::Int(b)) => {
+                        deque.push_front(Literal::Int((a / b) as i64));
+                    }
+                    (Literal::Int(a), Literal::Float(b)) => {
+                        deque.push_front(Literal::Int((a as f64 / b) as i64));
+                    }
+                    (Literal::Float(a), Literal::Int(b)) => {
+                        deque.push_front(Literal::Int((a / b as f64) as i64));
+                    }
+                    (Literal::Float(a), Literal::Float(b)) => {
+                        deque.push_front(Literal::Int((a / b) as i64));
+                    }
+                    _ => {
+                        panic!("invalid operands for integer division");
+                    }
+                }
+            }
+        }
+    }
+    pub fn floatdiv(deque: &mut VecDeque<Value>, place: Place) {
+        let mut iter = deque.iter();
+        match place {
+            Place::Left => {
+                let a = iter.next().unwrap().clone();
+                let b = iter.next().unwrap().clone();
+                deque.pop_front();
+                deque.pop_front();
+                if b == Literal::Int(0) || b == Literal::Float(0.0) {
+                    return;
+                }
+                match (a, b) {
+                    (Literal::Int(a), Literal::Int(b)) => {
+                        deque.push_front(Literal::Float(a as f64 / b as f64));
+                    }
+                    (Literal::Int(a), Literal::Float(b)) => {
+                        deque.push_front(Literal::Float(a as f64 / b));
+                    }
+                    (Literal::Float(a), Literal::Int(b)) => {
+                        deque.push_front(Literal::Float(a / b as f64));
+                    }
+                    (Literal::Float(a), Literal::Float(b)) => {
+                        deque.push_front(Literal::Float(a / b));
+                    }
+                    _ => {
+                        panic!("invalid operands for integer division");
+                    }
+                }
+            }
+            Place::Right => {
+                let a = iter.next_back().unwrap().clone();
+                let b = iter.next_back().unwrap().clone();
+                deque.pop_back();
+                deque.pop_back();
+                if b == Literal::Int(0) || b == Literal::Float(0.0) {
+                    return;
+                }
+                match (a, b) {
+                    (Literal::Int(a), Literal::Int(b)) => {
+                        deque.push_front(Literal::Float(a as f64 / b as f64));
+                    }
+                    (Literal::Int(a), Literal::Float(b)) => {
+                        deque.push_front(Literal::Float(a as f64 / b));
+                    }
+                    (Literal::Float(a), Literal::Int(b)) => {
+                        deque.push_front(Literal::Float(a / b as f64));
+                    }
+                    (Literal::Float(a), Literal::Float(b)) => {
+                        deque.push_front(Literal::Float(a / b));
+                    }
+                    _ => {
+                        panic!("invalid operands for integer division");
+                    }
+                }
+            }
+        }
+    }
+    pub fn modulo(deque: &mut VecDeque<Value>, place: Place) {
+        let mut iter = deque.iter();
+        match place {
+            Place::Left => {
+                let a = iter.next().unwrap().clone();
+                let b = iter.next().unwrap().clone();
+                deque.pop_front();
+                deque.pop_front();
+                if b == Literal::Int(0) || b == Literal::Float(0.0) {
+                    return;
+                }
+                match (a, b) {
+                    (Literal::Int(a), Literal::Int(b)) => {
+                        deque.push_front(Literal::Int(a % b));
+                    }
+                    (Literal::Int(a), Literal::Float(b)) => {
+                        deque.push_front(Literal::Int(a % b as i64));
+                    }
+                    (Literal::Float(a), Literal::Int(b)) => {
+                        deque.push_front(Literal::Int(a as i64 % b));
+                    }
+                    (Literal::Float(a), Literal::Float(b)) => {
+                        deque.push_front(Literal::Int((a as i64) % (b as i64)));
+                    }
+                    _ => {
+                        panic!("invalid operands for integer division");
+                    }
+                }
+            }
+            Place::Right => {
+                let a = iter.next_back().unwrap().clone();
+                let b = iter.next_back().unwrap().clone();
+                deque.pop_back();
+                deque.pop_back();
+                if b == Literal::Int(0) || b == Literal::Float(0.0) {
+                    return;
+                }
+                match (a, b) {
+                    (Literal::Int(a), Literal::Int(b)) => {
+                        deque.push_front(Literal::Int(a % b));
+                    }
+                    (Literal::Int(a), Literal::Float(b)) => {
+                        deque.push_front(Literal::Int(a % b as i64));
+                    }
+                    (Literal::Float(a), Literal::Int(b)) => {
+                        deque.push_front(Literal::Int(a as i64 % b));
+                    }
+                    (Literal::Float(a), Literal::Float(b)) => {
+                        deque.push_front(Literal::Int((a as i64) % (b as i64)));
+                    }
+                    _ => {
+                        panic!("invalid operands for integer division");
+                    }
+                }
+            }
+        }
+    }
 
     // IO
 
@@ -282,6 +500,10 @@ pub mod eval {
             // INT/FLOAT OPS
             "+" => add(deque, place),
             "-" => sub(deque, place),
+            "*" => mult(deque, place),
+            "/" => intdiv(deque, place),
+            "//" => floatdiv(deque, place),
+            "%" => modulo(deque, place),
 
             // IO
             "ol" => ol(deque, place),
