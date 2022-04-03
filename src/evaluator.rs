@@ -14,6 +14,63 @@ pub mod eval_instr {
     use crate::parser::par_ast::*;
     use std::collections::VecDeque;
 
+    type ValResult = Result<Value, &'static str>;
+    type Unary = fn(a: Value) -> ValResult;
+    type Binary = fn(a: Value, b: Value) -> ValResult;
+
+    // bool is to push the result back to the stack
+    pub fn unary(deque: &mut VecDeque<Value>, place: Place, func: Unary, push_result: bool) {
+        match place {
+            Place::Left => {
+                let val = deque.pop_front().unwrap();
+                let result = func(val);
+                if push_result {
+                    match result {
+                        Ok(v) => deque.push_front(v),
+                        Err(e) => panic!("{}", e),
+                    }
+                }
+            }
+            Place::Right => {
+                let val = deque.pop_back().unwrap();
+                let result = func(val);
+                if push_result {
+                    match result {
+                        Ok(v) => deque.push_back(v),
+                        Err(e) => panic!("{}", e),
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn binary(deque: &mut VecDeque<Value>, place: Place, func: Binary, push_result: bool) {
+        match place {
+            Place::Left => {
+                let val_a = deque.pop_front().unwrap();
+                let val_b = deque.pop_front().unwrap();
+                let result = func(val_a, val_b);
+                if push_result {
+                    match result {
+                        Ok(v) => deque.push_front(v),
+                        Err(e) => panic!("{}", e),
+                    }
+                }
+            }
+            Place::Right => {
+                let val_a = deque.pop_back().unwrap();
+                let val_b = deque.pop_back().unwrap();
+                let result = func(val_a, val_b);
+                if push_result {
+                    match result {
+                        Ok(v) => deque.push_back(v),
+                        Err(e) => panic!("{}", e),
+                    }
+                }
+            }
+        }
+    }
+
     // DEQUE OPS
     pub fn pop(deque: &mut VecDeque<Value>, place: Place) {
         match place {
@@ -63,330 +120,67 @@ pub mod eval_instr {
     }
 
     // INT/FLOAT OPS
-    pub fn add(deque: &mut VecDeque<Value>, place: Place) {
-        // if any of the values are not ints or floats, error
-        // if any are floats, convert the other to a float and add
-        let mut iter = deque.iter();
-        match place {
-            Place::Left => {
-                let a = iter.next().unwrap().clone();
-                let b = iter.next().unwrap().clone();
-                deque.pop_front();
-                deque.pop_front();
-                match (a, b) {
-                    (Literal::Int(a), Literal::Int(b)) => {
-                        deque.push_front(Literal::Int(a + b));
-                    }
-                    (Literal::Int(a), Literal::Float(b)) => {
-                        deque.push_front(Literal::Float(a as f64 + b));
-                    }
-                    (Literal::Float(a), Literal::Int(b)) => {
-                        deque.push_front(Literal::Float(a + b as f64));
-                    }
-                    (Literal::Float(a), Literal::Float(b)) => {
-                        deque.push_front(Literal::Float(a + b));
-                    }
-                    _ => {
-                        panic!("invalid operands for addition");
-                    }
-                }
-            }
-            Place::Right => {
-                let a = iter.next_back().unwrap().clone();
-                let b = iter.next_back().unwrap().clone();
-                deque.pop_back();
-                deque.pop_back();
-                match (a, b) {
-                    (Literal::Int(a), Literal::Int(b)) => {
-                        deque.push_back(Literal::Int(a + b));
-                    }
-                    (Literal::Int(a), Literal::Float(b)) => {
-                        deque.push_back(Literal::Float(a as f64 + b));
-                    }
-                    (Literal::Float(a), Literal::Int(b)) => {
-                        deque.push_back(Literal::Float(a + b as f64));
-                    }
-                    (Literal::Float(a), Literal::Float(b)) => {
-                        deque.push_back(Literal::Float(a + b));
-                    }
-                    _ => {
-                        panic!("invalid operands for addition");
-                    }
-                }
-            }
+    pub fn add(a: Value, b: Value) -> ValResult {
+        match (a, b) {
+            (Value::Int(a), Value::Int(b)) => Ok(Value::Int(a + b)),
+            (Value::Int(a), Value::Float(b)) => Ok(Value::Float(a as f64 + b)),
+            (Value::Float(a), Value::Int(b)) => Ok(Value::Float(a + b as f64)),
+            (Value::Float(a), Value::Float(b)) => Ok(Value::Float(a + b)),
+            _ => Err("invalid operands for addition"),
         }
     }
-    pub fn sub(deque: &mut VecDeque<Value>, place: Place) {
-        let mut iter = deque.iter();
-        match place {
-            Place::Left => {
-                let a = iter.next().unwrap().clone();
-                let b = iter.next().unwrap().clone();
-                deque.pop_front();
-                deque.pop_front();
-                match (a, b) {
-                    (Literal::Int(a), Literal::Int(b)) => {
-                        deque.push_front(Literal::Int(a - b));
-                    }
-                    (Literal::Int(a), Literal::Float(b)) => {
-                        deque.push_front(Literal::Float(a as f64 - b));
-                    }
-                    (Literal::Float(a), Literal::Int(b)) => {
-                        deque.push_front(Literal::Float(a - b as f64));
-                    }
-                    (Literal::Float(a), Literal::Float(b)) => {
-                        deque.push_front(Literal::Float(a - b));
-                    }
-                    _ => {
-                        panic!("invalid operands for subtraction");
-                    }
-                }
-            }
-            Place::Right => {
-                let a = iter.next_back().unwrap().clone();
-                let b = iter.next_back().unwrap().clone();
-                deque.pop_back();
-                deque.pop_back();
-                match (a, b) {
-                    (Literal::Int(a), Literal::Int(b)) => {
-                        deque.push_back(Literal::Int(a - b));
-                    }
-                    (Literal::Int(a), Literal::Float(b)) => {
-                        deque.push_back(Literal::Float(a as f64 - b));
-                    }
-                    (Literal::Float(a), Literal::Int(b)) => {
-                        deque.push_back(Literal::Float(a - b as f64));
-                    }
-                    (Literal::Float(a), Literal::Float(b)) => {
-                        deque.push_back(Literal::Float(a - b));
-                    }
-                    _ => {
-                        panic!("invalid operands for subtraction");
-                    }
-                }
-            }
+    pub fn sub(a: Value, b: Value) -> ValResult {
+        match (a, b) {
+            (Value::Int(a), Value::Int(b)) => Ok(Value::Int(a - b)),
+            (Value::Int(a), Value::Float(b)) => Ok(Value::Float(a as f64 - b)),
+            (Value::Float(a), Value::Int(b)) => Ok(Value::Float(a - b as f64)),
+            (Value::Float(a), Value::Float(b)) => Ok(Value::Float(a - b)),
+            _ => Err("invalid operands for subtraction"),
         }
     }
-    pub fn mult(deque: &mut VecDeque<Value>, place: Place) {
-        let mut iter = deque.iter();
-        match place {
-            Place::Left => {
-                let a = iter.next().unwrap().clone();
-                let b = iter.next().unwrap().clone();
-                deque.pop_front();
-                deque.pop_front();
-                match (a, b) {
-                    (Literal::Int(a), Literal::Int(b)) => {
-                        deque.push_front(Literal::Int(a * b));
-                    }
-                    (Literal::Int(a), Literal::Float(b)) => {
-                        deque.push_front(Literal::Float(a as f64 * b));
-                    }
-                    (Literal::Float(a), Literal::Int(b)) => {
-                        deque.push_front(Literal::Float(a * b as f64));
-                    }
-                    (Literal::Float(a), Literal::Float(b)) => {
-                        deque.push_front(Literal::Float(a * b));
-                    }
-                    _ => {
-                        panic!("invalid operands for multiplication");
-                    }
-                }
-            }
-            Place::Right => {
-                let a = iter.next_back().unwrap().clone();
-                let b = iter.next_back().unwrap().clone();
-                deque.pop_back();
-                deque.pop_back();
-                match (a, b) {
-                    (Literal::Int(a), Literal::Int(b)) => {
-                        deque.push_back(Literal::Int(a * b));
-                    }
-                    (Literal::Int(a), Literal::Float(b)) => {
-                        deque.push_back(Literal::Float(a as f64 * b));
-                    }
-                    (Literal::Float(a), Literal::Int(b)) => {
-                        deque.push_back(Literal::Float(a * b as f64));
-                    }
-                    (Literal::Float(a), Literal::Float(b)) => {
-                        deque.push_back(Literal::Float(a * b));
-                    }
-                    _ => {
-                        panic!("invalid operands for multiplication");
-                    }
-                }
-            }
+    pub fn mult(a: Value, b: Value) -> ValResult {
+        match (a, b) {
+            (Value::Int(a), Value::Int(b)) => Ok(Value::Int(a * b)),
+            (Value::Int(a), Value::Float(b)) => Ok(Value::Float(a as f64 * b)),
+            (Value::Float(a), Value::Int(b)) => Ok(Value::Float(a * b as f64)),
+            (Value::Float(a), Value::Float(b)) => Ok(Value::Float(a * b)),
+            _ => Err("invalid operands for multiplication"),
         }
     }
-    pub fn intdiv(deque: &mut VecDeque<Value>, place: Place) {
-        let mut iter = deque.iter();
-        match place {
-            Place::Left => {
-                let a = iter.next().unwrap().clone();
-                let b = iter.next().unwrap().clone();
-                deque.pop_front();
-                deque.pop_front();
-                if b == Literal::Int(0) || b == Literal::Float(0.0) {
-                    return;
-                }
-                match (a, b) {
-                    (Literal::Int(a), Literal::Int(b)) => {
-                        deque.push_front(Literal::Int((a / b) as i64));
-                    }
-                    (Literal::Int(a), Literal::Float(b)) => {
-                        deque.push_front(Literal::Int((a as f64 / b) as i64));
-                    }
-                    (Literal::Float(a), Literal::Int(b)) => {
-                        deque.push_front(Literal::Int((a / b as f64) as i64));
-                    }
-                    (Literal::Float(a), Literal::Float(b)) => {
-                        deque.push_front(Literal::Int((a / b) as i64));
-                    }
-                    _ => {
-                        panic!("invalid operands for integer division");
-                    }
-                }
-            }
-            Place::Right => {
-                let a = iter.next_back().unwrap().clone();
-                let b = iter.next_back().unwrap().clone();
-                deque.pop_back();
-                deque.pop_back();
-                if b == Literal::Int(0) || b == Literal::Float(0.0) {
-                    return;
-                }
-                match (a, b) {
-                    (Literal::Int(a), Literal::Int(b)) => {
-                        deque.push_front(Literal::Int((a / b) as i64));
-                    }
-                    (Literal::Int(a), Literal::Float(b)) => {
-                        deque.push_front(Literal::Int((a as f64 / b) as i64));
-                    }
-                    (Literal::Float(a), Literal::Int(b)) => {
-                        deque.push_front(Literal::Int((a / b as f64) as i64));
-                    }
-                    (Literal::Float(a), Literal::Float(b)) => {
-                        deque.push_front(Literal::Int((a / b) as i64));
-                    }
-                    _ => {
-                        panic!("invalid operands for integer division");
-                    }
-                }
-            }
+    pub fn intdiv(a: Value, b: Value) -> ValResult {
+        if b == Value::Int(0) || b == Value::Float(0.0) {
+            return Err("integer division by zero");
+        }
+        match (a, b) {
+            (Value::Int(a), Value::Int(b)) => Ok(Value::Int(a / b)),
+            (Value::Int(a), Value::Float(b)) => Ok(Value::Float(a as f64 / b)),
+            (Value::Float(a), Value::Int(b)) => Ok(Value::Float(a / b as f64)),
+            (Value::Float(a), Value::Float(b)) => Ok(Value::Float(a / b)),
+            _ => Err("invalid operands for integer division"),
         }
     }
-    pub fn floatdiv(deque: &mut VecDeque<Value>, place: Place) {
-        let mut iter = deque.iter();
-        match place {
-            Place::Left => {
-                let a = iter.next().unwrap().clone();
-                let b = iter.next().unwrap().clone();
-                deque.pop_front();
-                deque.pop_front();
-                if b == Literal::Int(0) || b == Literal::Float(0.0) {
-                    return;
-                }
-                match (a, b) {
-                    (Literal::Int(a), Literal::Int(b)) => {
-                        deque.push_front(Literal::Float(a as f64 / b as f64));
-                    }
-                    (Literal::Int(a), Literal::Float(b)) => {
-                        deque.push_front(Literal::Float(a as f64 / b));
-                    }
-                    (Literal::Float(a), Literal::Int(b)) => {
-                        deque.push_front(Literal::Float(a / b as f64));
-                    }
-                    (Literal::Float(a), Literal::Float(b)) => {
-                        deque.push_front(Literal::Float(a / b));
-                    }
-                    _ => {
-                        panic!("invalid operands for integer division");
-                    }
-                }
-            }
-            Place::Right => {
-                let a = iter.next_back().unwrap().clone();
-                let b = iter.next_back().unwrap().clone();
-                deque.pop_back();
-                deque.pop_back();
-                if b == Literal::Int(0) || b == Literal::Float(0.0) {
-                    return;
-                }
-                match (a, b) {
-                    (Literal::Int(a), Literal::Int(b)) => {
-                        deque.push_front(Literal::Float(a as f64 / b as f64));
-                    }
-                    (Literal::Int(a), Literal::Float(b)) => {
-                        deque.push_front(Literal::Float(a as f64 / b));
-                    }
-                    (Literal::Float(a), Literal::Int(b)) => {
-                        deque.push_front(Literal::Float(a / b as f64));
-                    }
-                    (Literal::Float(a), Literal::Float(b)) => {
-                        deque.push_front(Literal::Float(a / b));
-                    }
-                    _ => {
-                        panic!("invalid operands for integer division");
-                    }
-                }
-            }
+    pub fn floatdiv(a: Value, b: Value) -> ValResult {
+        if b == Value::Int(0) || b == Value::Float(0.0) {
+            return Err("float division by zero");
+        }
+        match (a, b) {
+            (Value::Int(a), Value::Int(b)) => Ok(Value::Float(a as f64 / b as f64)),
+            (Value::Int(a), Value::Float(b)) => Ok(Value::Float(a as f64 / b)),
+            (Value::Float(a), Value::Int(b)) => Ok(Value::Float(a / b as f64)),
+            (Value::Float(a), Value::Float(b)) => Ok(Value::Float(a / b)),
+            _ => Err("invalid operands for float division"),
         }
     }
-    pub fn modulo(deque: &mut VecDeque<Value>, place: Place) {
-        let mut iter = deque.iter();
-        match place {
-            Place::Left => {
-                let a = iter.next().unwrap().clone();
-                let b = iter.next().unwrap().clone();
-                deque.pop_front();
-                deque.pop_front();
-                if b == Literal::Int(0) || b == Literal::Float(0.0) {
-                    return;
-                }
-                match (a, b) {
-                    (Literal::Int(a), Literal::Int(b)) => {
-                        deque.push_front(Literal::Int(a % b));
-                    }
-                    (Literal::Int(a), Literal::Float(b)) => {
-                        deque.push_front(Literal::Int(a % b as i64));
-                    }
-                    (Literal::Float(a), Literal::Int(b)) => {
-                        deque.push_front(Literal::Int(a as i64 % b));
-                    }
-                    (Literal::Float(a), Literal::Float(b)) => {
-                        deque.push_front(Literal::Int((a as i64) % (b as i64)));
-                    }
-                    _ => {
-                        panic!("invalid operands for integer division");
-                    }
-                }
-            }
-            Place::Right => {
-                let a = iter.next_back().unwrap().clone();
-                let b = iter.next_back().unwrap().clone();
-                deque.pop_back();
-                deque.pop_back();
-                if b == Literal::Int(0) || b == Literal::Float(0.0) {
-                    return;
-                }
-                match (a, b) {
-                    (Literal::Int(a), Literal::Int(b)) => {
-                        deque.push_front(Literal::Int(a % b));
-                    }
-                    (Literal::Int(a), Literal::Float(b)) => {
-                        deque.push_front(Literal::Int(a % b as i64));
-                    }
-                    (Literal::Float(a), Literal::Int(b)) => {
-                        deque.push_front(Literal::Int(a as i64 % b));
-                    }
-                    (Literal::Float(a), Literal::Float(b)) => {
-                        deque.push_front(Literal::Int((a as i64) % (b as i64)));
-                    }
-                    _ => {
-                        panic!("invalid operands for integer division");
-                    }
-                }
-            }
+    pub fn modulo(a: Value, b: Value) -> ValResult {
+        if b == Value::Int(0) || b == Value::Float(0.0) {
+            return Err("modulo by zero");
+        }
+        match (a, b) {
+            (Value::Int(a), Value::Int(b)) => Ok(Value::Int(a % b)),
+            (Value::Int(a), Value::Float(b)) => Ok(Value::Float(a as f64 % b)),
+            (Value::Float(a), Value::Int(b)) => Ok(Value::Float(a % b as f64)),
+            (Value::Float(a), Value::Float(b)) => Ok(Value::Float(a % b)),
+            _ => Err("invalid operands for modulo"),
         }
     }
 
@@ -498,12 +292,12 @@ pub mod eval {
             "rot" | "@" => rot(deque, place),
             "over" | "^" => over(deque, place),
             // INT/FLOAT OPS
-            "+" => add(deque, place),
-            "-" => sub(deque, place),
-            "*" => mult(deque, place),
-            "/" => intdiv(deque, place),
-            "//" => floatdiv(deque, place),
-            "%" => modulo(deque, place),
+            "+" => binary(deque, place, add, true),
+            "-" => binary(deque, place, sub, true),
+            "*" => binary(deque, place, mult, true),
+            "/" => binary(deque, place, intdiv, true),
+            "//" => binary(deque, place, floatdiv, true),
+            "%" => binary(deque, place, modulo, true),
 
             // IO
             "ol" => ol(deque, place),
