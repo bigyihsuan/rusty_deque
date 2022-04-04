@@ -83,8 +83,14 @@ fn main() {
     } else if filename.is_empty() {
         // if no filename, but expr, run expr
         if !expr.is_empty() {
-            run_code(Option::None, expr, print_tokens, print_ast, print_stack);
-            std::process::exit(0);
+            let result = run_code(Option::None, expr, print_tokens, print_ast, print_stack);
+            match result {
+                Ok(_) => std::process::exit(0),
+                Err(e) => {
+                    println!("{}", e);
+                    std::process::exit(1);
+                }
+            }
         } else {
             println!("no expression specified");
             print_usage();
@@ -94,8 +100,14 @@ fn main() {
         // if filename, run file
         // read from file
         let contents = std::fs::read_to_string(filename).expect("file not found");
-        run_code(Option::None, contents, print_tokens, print_ast, print_stack);
-        std::process::exit(0);
+        let result = run_code(Option::None, contents, print_tokens, print_ast, print_stack);
+        match result {
+            Ok(_) => std::process::exit(0),
+            Err(e) => {
+                println!("{}", e);
+                std::process::exit(1);
+            }
+        }
     }
 }
 
@@ -114,7 +126,7 @@ pub fn run_code(
     print_tokens: bool,
     print_ast: bool,
     print_stack: bool,
-) -> VecDeque<Value> {
+) -> Result<VecDeque<Value>, String> {
     // lex
     let tokens = lexer::lex::tokenize_code(&code);
     if print_tokens {
@@ -122,23 +134,31 @@ pub fn run_code(
     }
     // parse
     let ast = parser::par::parse_tokens(&mut tokens.into_iter());
-    if print_ast {
-        println!("{:#?}", ast);
-    }
-    // run
-    let deque = evaluator::eval::run_ast(deque, ast);
-    if print_stack {
-        let mut out_str = "(".to_string();
-        let mut deque_iter = deque.iter();
-        for _ in 0..deque.len() {
-            let val = deque_iter.next().unwrap();
-            out_str.push_str(val.clone().to_string().as_str());
-            out_str.push_str(", ");
+    match ast {
+        Ok(ast) => {
+            if print_ast {
+                println!("{:#?}", ast);
+            }
+            // run
+            let deque = evaluator::eval::run_ast(deque, ast);
+            if print_stack {
+                let mut out_str = "(".to_string();
+                let mut deque_iter = deque.iter();
+                for _ in 0..deque.len() {
+                    let val = deque_iter.next().unwrap();
+                    out_str.push_str(val.clone().to_string().as_str());
+                    out_str.push_str(", ");
+                }
+                out_str.push_str(")");
+                println!("{}", out_str);
+            }
+            Ok(deque)
         }
-        out_str.push_str(")");
-        println!("{}", out_str);
+        Err(e) => {
+            println!("{}", e);
+            Err(e)
+        }
     }
-    deque
 }
 
 pub fn repl(print_tokens: bool, print_ast: bool, print_stack: bool) {
@@ -156,7 +176,21 @@ pub fn repl(print_tokens: bool, print_ast: bool, print_stack: bool) {
                     println!("");
                     return;
                 }
-                deque = run_code(Some(deque), input, print_tokens, print_ast, print_stack);
+                let code_result = run_code(
+                    Some(deque.clone()),
+                    input,
+                    print_tokens,
+                    print_ast,
+                    print_stack,
+                );
+                match code_result {
+                    Ok(new_deque) => {
+                        deque = new_deque;
+                    }
+                    Err(e) => {
+                        println!("{}", e);
+                    }
+                }
             }
             Err(_) => {
                 return;

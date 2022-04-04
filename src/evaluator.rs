@@ -28,7 +28,7 @@ pub mod eval_instr {
                 if push_result {
                     match result {
                         Ok(v) => deque.push_front(v),
-                        Err(e) => panic!("{}", e),
+                        Err(e) => println!("{}", e),
                     }
                 }
             }
@@ -38,7 +38,7 @@ pub mod eval_instr {
                 if push_result {
                     match result {
                         Ok(v) => deque.push_back(v),
-                        Err(e) => panic!("{}", e),
+                        Err(e) => println!("{}", e),
                     }
                 }
             }
@@ -54,7 +54,7 @@ pub mod eval_instr {
                 if push_result {
                     match result {
                         Ok(v) => deque.push_front(v),
-                        Err(e) => panic!("{}", e),
+                        Err(e) => println!("{}", e),
                     }
                 }
             }
@@ -65,7 +65,7 @@ pub mod eval_instr {
                 if push_result {
                     match result {
                         Ok(v) => deque.push_back(v),
-                        Err(e) => panic!("{}", e),
+                        Err(e) => println!("{}", e),
                     }
                 }
             }
@@ -81,7 +81,7 @@ pub mod eval_instr {
                 if push_result {
                     match result {
                         Ok(v) => deque.push_front(v),
-                        Err(e) => panic!("{}", e),
+                        Err(e) => println!("{}", e),
                     }
                 }
             }
@@ -93,7 +93,7 @@ pub mod eval_instr {
                 if push_result {
                     match result {
                         Ok(v) => deque.push_back(v),
-                        Err(e) => panic!("{}", e),
+                        Err(e) => println!("{}", e),
                     }
                 }
             }
@@ -175,6 +175,44 @@ pub mod eval_instr {
                 let len = deque.len();
                 deque.push_back(Value::Int(len as i64));
             }
+        }
+    }
+    // CASTINGS
+    pub fn cast_to_int(val: Value) -> ValResult {
+        match val {
+            Value::Int(i) => Ok(Value::Int(i)),
+            Value::Float(f) => Ok(Value::Int(f as i64)),
+            Value::Bool(b) => Ok(Value::Int(if b { 1 } else { 0 })),
+            Value::Char(c) => Ok(Value::Int(c as i64)),
+            _ => Err("Cannot cast to int"),
+        }
+    }
+    pub fn cast_to_float(val: Value) -> ValResult {
+        match val {
+            Value::Int(i) => Ok(Value::Float(i as f64)),
+            Value::Float(f) => Ok(Value::Float(f)),
+            Value::Bool(b) => Ok(Value::Float(if b { 1.0 } else { 0.0 })),
+            Value::Char(c) => Ok(Value::Float(c as i64 as f64)),
+            _ => Err("Cannot cast to float"),
+        }
+    }
+    pub fn cast_to_bool(val: Value) -> ValResult {
+        match val {
+            Value::Int(_) => Ok(Value::Bool(truthiness_of(val))),
+            Value::Float(_) => Ok(Value::Bool(truthiness_of(val))),
+            Value::Bool(_) => Ok(Value::Bool(truthiness_of(val))),
+            Value::Char(_) => Ok(Value::Bool(truthiness_of(val))),
+            Value::List(_) => Ok(Value::Bool(truthiness_of(val))),
+            Value::Block(_) => Ok(Value::Bool(truthiness_of(val))),
+        }
+    }
+    pub fn cast_to_char(val: Value) -> ValResult {
+        match val {
+            Value::Int(i) => Ok(Value::Char(i as u8 as char)),
+            Value::Float(f) => Ok(Value::Char(f as u8 as char)),
+            Value::Bool(b) => Ok(Value::Char(if b { '1' } else { '0' })),
+            Value::Char(c) => Ok(Value::Char(c)),
+            _ => Err("Cannot cast to char"),
         }
     }
 
@@ -603,6 +641,11 @@ pub mod eval {
             "over" => over(deque, place),
             "len" => len(deque, place),
             "swap" => swap(deque, place),
+            // CASTINGS
+            "toInt" => unary(deque, place, cast_to_int, true),
+            "toFloat" => unary(deque, place, cast_to_float, true),
+            "toChar" => unary(deque, place, cast_to_char, true),
+            "toBool" => unary(deque, place, cast_to_bool, true),
             // INT/FLOAT OPS
             "+" => binary(deque, place, add, true),
             "-" => binary(deque, place, sub, true),
@@ -648,7 +691,7 @@ pub mod eval {
                             }
                         }
                     }
-                    _ => panic!("ld: expected list"),
+                    _ => println!("ld: expected list"),
                 };
             }
 
@@ -658,7 +701,7 @@ pub mod eval {
             // IO
             "ol" => ol(deque, place),
             "ow" => ow(deque, place),
-            _ => panic!("Unknown instruction: {}", instr),
+            _ => println!("Unknown instruction: {}", instr),
         }
     }
 }

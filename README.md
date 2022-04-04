@@ -45,9 +45,16 @@ Floats contain a `.`, and floats `0 < f < 1` must start with `0.`. Booleans are 
 
 The language has a single compund type: **a List**. Lists can be nested, and its elements can have different types. List elements are separated by commas.
 
+## Truthiness
+The five types have the following truthiness rules:
+
+* Ints, floats, chars are truthy if non-zero, and falsy otherwise.
+* Lists are truthy if they are non-empty, and falsy otherwise.
+* Blocks are always truthy.
+
 # Literals
 
-Literals are pushed onto the deque as-is. The appending operator denotes where it gets pushed to (see section **Appending Operator** below).
+Literals are pushed onto the deque as-is. The appending sigil denotes where it gets pushed to (see section **Appending Sigil** below).
 
 ```bash
 123   # postive int
@@ -95,21 +102,21 @@ Instructions have the general philosophy of "discard if failed". If an instructi
 
 ## Deque Operations
 * (`push`: Handled by literals.)
-* `pop`/`$`: Discard one element.
-* `dup`/`:`: Duplicate one element.
+* `pop`: Discard one element.
+* `dup`: Duplicate one element.
 * `swap`: Swap the front/back two elements.
-* `rot`/`@` : Rotate the deque one element towards a direction (either to the front/left `rot~` or the back/right `rot!`).
-* `over`/`^` : Duplicate the element below the top/bottom element.
+* `rot` : Rotate the deque one element towards a direction (either to the front/left `rot~` or the back/right `rot!`).
+* `over` : Duplicate the element below the top/bottom element.
 * `len`: Push the length of the deque.
 
 ## Castings
 
 These operations attempt to cast primitives to primitives. If the conversion fails, it discards the value.
 
-* `toInt`: Pops 1 and pushes an int. Floats are truncated at the decimal point. Characters have their Rust `c as u32` value.
-* `toFloat`: Pops 1 and pushes a float. Characters have their Rust `c as u32` value.
+* `toInt`: Pops 1 and pushes an int. Floats are truncated at the decimal point. Characters have their Rust `c as u64` value. Booleans are 1 or 0.
+* `toFloat`: Pops 1 and pushes a float. Characters have their Rust `c as u64` value.
 * `toChar`: Pops 1 and pushes a char. Uses Rust `std::char::to_char(v)`.
-* `toBool`: Pops 1 and pushes a bool. For ints and floats, this is `v ~= 0`. This is always `true` for chars. This is `true` for lists only when non-empty.
+* `toBool`: Pops 1 and pushes a bool, based on the truthiness rules noted above.
 
 ## `Int`/`Float` Operations
 
@@ -130,6 +137,7 @@ It tries to do integer operations by default; if any arguments are a float, it p
 ## Comparisons and Boolean Operations
 
 All of these operators push a boolean. All binary operators pop `a` and `b` and push `a OP b`,
+
 
 * `true`, `false`: The boolean constant. Pushes a boolean `true` or `false` onto the deque.
 * `>`,`>=`,`<`,`<=`,`=`: Numerical comparison. You can compare int and float to int and float. You can also compare char to char, but not char to any other type.

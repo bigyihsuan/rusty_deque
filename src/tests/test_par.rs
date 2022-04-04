@@ -6,7 +6,7 @@ mod tests {
     use crate::parser::par_ast::*;
 
     #[test]
-    fn test_par_hello_world() {
+    fn test_par_hello_world() -> Result<(), String> {
         let input_str = String::from("\"Hello World!\"~ ow!");
         let tokens = tokenize_code(&input_str);
         println!("Tokens: {:?}", tokens);
@@ -30,16 +30,30 @@ mod tests {
             Exec::Left(Op::Instruction(String::from("ow"))),
         ];
 
-        println!("{:?}", code);
-        assert_eq!(code, expected);
+        match code {
+            Ok(code) => {
+                println!("{:?}", code);
+                assert_eq!(code, expected);
+                Ok(())
+            }
+            Err(e) => Err(e),
+        }
     }
 
     #[test]
-    #[should_panic(expected = "Parser Error: Unexpected token type")]
-    fn test_par_invalid_literal() {
+    fn test_par_invalid_literal() -> Result<(), String> {
         let input_str = String::from("ow");
         let token = get_next_token(&input_str, 0, 0).0;
-        parse_literal(&token);
+        match parse_literal(&token) {
+            Ok(_) => Err(String::from("Expected error")),
+            Err(e) => {
+                assert_eq!(
+                    e,
+                    String::from("Parser Error: Unexpected token type Instr for Literal")
+                );
+                Ok(())
+            }
+        }
     }
 
     #[test]
@@ -68,7 +82,7 @@ mod tests {
 
         for (i, input) in ints.iter().enumerate() {
             let token = get_next_token(&input, 0, 0).0;
-            let literal = parse_literal(&token);
+            let literal = parse_literal(&token).unwrap();
 
             assert_eq!(expected[i], literal);
             println!("{:?}", literal);
@@ -105,7 +119,7 @@ mod tests {
 
         for (i, input) in floats.iter().enumerate() {
             let token = get_next_token(&input, 0, 0).0;
-            let literal = parse_literal(&token);
+            let literal = parse_literal(&token).unwrap();
 
             assert_eq!(expected[i], literal);
             println!("{:?}", literal);
@@ -144,7 +158,7 @@ mod tests {
         for (i, input) in chars.iter().enumerate() {
             println!("input: {:}", input);
             let token = get_next_token(&input, 0, 0).0;
-            let literal = parse_literal(&token);
+            let literal = parse_literal(&token).unwrap();
 
             println!("{:?}\n", literal);
             assert_eq!(expected[i], literal);
@@ -209,7 +223,7 @@ mod tests {
 
         for (expect, input) in expected.iter().zip(strings.iter()) {
             let token = get_next_token(&input, 0, 0).0;
-            let literal = parse_literal(&token);
+            let literal = parse_literal(&token).unwrap();
 
             assert_eq!(expect, &literal);
             println!("{:?}", literal);
@@ -217,37 +231,63 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Parser Error: Unrecognized character escape sequence")]
-    fn test_par_invalid_char_escapes_for_char() {
+    fn test_par_invalid_char_escapes_for_char() -> Result<(), String> {
         let input_str = String::from("'\\a'");
         let token = get_next_token(&input_str, 0, 0).0;
-        parse_literal(&token);
+        match parse_literal(&token) {
+            Ok(_) => Err(String::from("Expected error")),
+            Err(err) => {
+                assert_eq!(
+                    err,
+                    String::from("Parser Error: Unrecognized character escape sequence `\\a`")
+                );
+                Ok(())
+            }
+        }
     }
 
     #[test]
-    #[should_panic(expected = "Parser Error: Unrecognized character escape sequence")]
-    fn test_par_invalid_char_escapes_for_string() {
+    fn test_par_invalid_char_escapes_for_string() -> Result<(), String> {
         let input_str = String::from("\"\\a\"");
         let token = get_next_token(&input_str, 0, 0).0;
-        parse_literal(&token);
+        match parse_literal(&token) {
+            Ok(_) => Err(String::from("Expected error")),
+            Err(err) => {
+                assert_eq!(
+                    err,
+                    String::from("Parser Error: Unrecognized character escape sequence `\\a`")
+                );
+                Ok(())
+            }
+        }
     }
 
     #[test]
-    #[should_panic(expected = "Parsing Error: Unclosed list")]
-    fn test_par_invalid_list() {
+    fn test_par_invalid_list() -> Result<(), String> {
         let input_str = String::from("[1, 2, 3");
         let tokens = tokenize_code(&input_str);
         println!("{:?}", tokens);
-        println!("{:?}", parse_list(&mut tokens.into_iter(), false));
+        match parse_list(&mut tokens.into_iter(), false) {
+            Ok(_) => Err(String::from("Expected error")),
+            Err(err) => {
+                assert_eq!(err, String::from("Parsing Error: Unclosed list"));
+                Ok(())
+            }
+        }
     }
 
     #[test]
-    #[should_panic(expected = "Parsing Error: Unclosed list")]
-    fn test_par_invalid_nested_list() {
+    fn test_par_invalid_nested_list() -> Result<(), String> {
         let input_str = String::from("[1, [2, 3");
         let tokens = tokenize_code(&input_str);
         println!("{:?}", tokens);
-        println!("{:?}", parse_list(&mut tokens.into_iter(), false));
+        match parse_list(&mut tokens.into_iter(), false) {
+            Ok(_) => Err(String::from("Expected error")),
+            Err(err) => {
+                assert_eq!(err, String::from("Parser Error: Parsing Error: Unclosed list for LeftSquare(\"[\", \"\", 4, 5, 0)"));
+                Ok(())
+            }
+        }
     }
 
     #[test]
@@ -255,7 +295,7 @@ mod tests {
         let input_str = String::from("[1, 2, 3]");
         let tokens = tokenize_code(&input_str);
         println!("{:?}", &tokens);
-        let list = parse_list(&mut tokens.into_iter(), false);
+        let list = parse_list(&mut tokens.into_iter(), false).unwrap();
         println!("{:?}", list);
 
         let expected = Literal::List(vec![Literal::Int(1), Literal::Int(2), Literal::Int(3)]);
@@ -267,7 +307,7 @@ mod tests {
         let input_str = String::from("[1, 4, [2, 3]]");
         let tokens = tokenize_code(&input_str);
         println!("{:?}", &tokens);
-        let list = parse_list(&mut tokens.into_iter(), false);
+        let list = parse_list(&mut tokens.into_iter(), false).unwrap();
         println!("{:?}", list);
 
         let expected = Literal::List(vec![
@@ -283,7 +323,7 @@ mod tests {
         let input_str = String::from("[1, [2, 3], 4]");
         let tokens = tokenize_code(&input_str);
         println!("{:?}", &tokens);
-        let list = parse_list(&mut tokens.into_iter(), false);
+        let list = parse_list(&mut tokens.into_iter(), false).unwrap();
         println!("{:?}", list);
 
         let expected = Literal::List(vec![
@@ -299,7 +339,7 @@ mod tests {
         let input_str = String::from("[[2, 3], 1, 4]");
         let tokens = tokenize_code(&input_str);
         println!("{:?}", &tokens);
-        let list = parse_list(&mut tokens.into_iter(), false);
+        let list = parse_list(&mut tokens.into_iter(), false).unwrap();
         println!("{:?}", list);
 
         let expected = Literal::List(vec![
@@ -315,7 +355,7 @@ mod tests {
         let input_str = String::from("[[2, 3], [1, 4]]");
         let tokens = tokenize_code(&input_str);
         println!("{:?}", &tokens);
-        let list = parse_list(&mut tokens.into_iter(), false);
+        let list = parse_list(&mut tokens.into_iter(), false).unwrap();
         println!("{:?}", list);
 
         let expected = Literal::List(vec![
@@ -330,7 +370,7 @@ mod tests {
         let input_str = String::from("[[\"hello\", \"world\"], [\"[this,isnt]\", \"[a,list]\"]]");
         let tokens = tokenize_code(&input_str);
         println!("{:?}", &tokens);
-        let list = parse_list(&mut tokens.into_iter(), false);
+        let list = parse_list(&mut tokens.into_iter(), false).unwrap();
         println!("{:?}", list);
 
         let expected = Literal::List(vec![
@@ -384,7 +424,7 @@ mod tests {
         let input_str = String::from("[1.2, 'a', [true, 3], -4]");
         let tokens = tokenize_code(&input_str);
         println!("{:?}", &tokens);
-        let list = parse_list(&mut tokens.into_iter(), false);
+        let list = parse_list(&mut tokens.into_iter(), false).unwrap();
 
         let expected = Literal::List(vec![
             Literal::Float(1.2),
@@ -434,19 +474,18 @@ mod tests {
             println!("{}", input_str);
             let tokens = tokenize_code(input_str);
             println!("{:?}", &tokens);
-            let op = parse_op(&mut tokens.into_iter());
+            let op = parse_op(&mut tokens.into_iter()).unwrap();
             println!("{:?}\n", op);
             assert_eq!(expected, &op);
         }
     }
 
     #[test]
-    #[should_panic]
     fn test_par_exec_fail() {
         let input_str = String::from("[1, 2, 3]not");
         let tokens = tokenize_code(&input_str);
         println!("{:?}", &tokens);
-        parse_exec(&mut tokens.into_iter());
+        println!("{}", parse_exec(&mut tokens.into_iter()).unwrap_err());
     }
 
     #[test]
@@ -486,7 +525,7 @@ mod tests {
             println!("{}", input_str);
             let tokens = tokenize_code(input_str);
             println!("{:?}", &tokens);
-            let exec = parse_exec(&mut tokens.into_iter());
+            let exec = parse_exec(&mut tokens.into_iter()).unwrap();
             println!("{:?}\n", exec);
             assert_eq!(expected, &exec);
         }
@@ -529,7 +568,7 @@ mod tests {
             println!("{}", input_str);
             let tokens = tokenize_code(input_str);
             println!("{:?}", &tokens);
-            let exec = parse_exec(&mut tokens.into_iter());
+            let exec = parse_exec(&mut tokens.into_iter()).unwrap();
             println!("{:?}\n", exec);
             assert_eq!(expected, &exec);
         }
@@ -540,7 +579,7 @@ mod tests {
         let input_str = String::from("{1~ 2! 3~}!");
         let tokens = tokenize_code(&input_str);
         println!("{:?}", &tokens);
-        let block = parse_exec(&mut tokens.into_iter());
+        let block = parse_exec(&mut tokens.into_iter()).unwrap();
         println!("{:?}\n", block);
 
         let expected = Exec::Left(Op::Literal(Literal::Block(vec![
@@ -557,7 +596,7 @@ mod tests {
         let input_str = String::from("{1~ {dup~ 2! rot~ <!}~ 3~}!");
         let tokens = tokenize_code(&input_str);
         println!("{:?}", &tokens);
-        let block = parse_exec(&mut tokens.into_iter());
+        let block = parse_exec(&mut tokens.into_iter()).unwrap();
         println!("{:?}\n", block);
 
         let expected = Exec::Left(Op::Literal(Literal::Block(vec![

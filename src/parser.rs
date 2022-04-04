@@ -159,58 +159,90 @@ pub mod par {
     use crate::parser::par_ast::*;
     use std::vec;
 
+    // type CodeResult = Result<Code, String>;
+    type ExecResult = Result<Exec, String>;
+    type OpResult = Result<Op, String>;
+    type LiteralResult = Result<Literal, String>;
+
     // parses an input vec of tokens into an ast, with root at Code
-    pub fn parse_tokens(tokens: &mut vec::IntoIter<Token>) -> Code {
+    pub fn parse_tokens(tokens: &mut vec::IntoIter<Token>) -> Result<Code, String> {
         let mut code: Code = Vec::new();
         // while ther are tokens left, parse execs by calling parse_exec
         while tokens.into_iter().len() > 0 {
             let exec = parse_exec(tokens);
-            code.push(exec);
+            match exec {
+                Ok(e) => code.push(e),
+                Err(e) => return Err(e),
+            }
         }
-        code
+        Ok(code)
     }
 
     // parses a list of tokens into an Exec
-    pub fn parse_exec(tokens: &mut vec::IntoIter<Token>) -> Exec {
+    pub fn parse_exec(tokens: &mut vec::IntoIter<Token>) -> ExecResult {
         // println!("parse_exec {:?}", &tokens);
         let op = parse_op(tokens);
-        let mut iter = tokens.peekable();
-        let sigil = iter.peek().unwrap();
-        // println!("    exec sigil {:?}", &sigil);
-        match sigil.token_type {
-            TokenType::Bang => Exec::new_left(op),
-            TokenType::Tilde => Exec::new_right(op),
-            _ => panic!(
-                "Parser Error: Expected sigil Bang or Tilde, instead got {:?}",
-                sigil.token_type
-            ),
+        match op {
+            Ok(op) => {
+                let mut iter = tokens.peekable();
+                let sigil = iter.peek().unwrap();
+                // println!("    exec sigil {:?}", &sigil);
+                match sigil.token_type {
+                    TokenType::Bang => Ok(Exec::new_left(op)),
+                    TokenType::Tilde => Ok(Exec::new_right(op)),
+                    _ => Err(format!(
+                        "Parser Error: Expected sigil Bang or Tilde, instead got {:?}",
+                        sigil.token_type
+                    )),
+                }
+            }
+            Err(e) => Err(e),
         }
     }
 
     // parses a list of tokens into an Op
-    pub fn parse_op(tokens: &mut vec::IntoIter<Token>) -> Op {
+    pub fn parse_op(tokens: &mut vec::IntoIter<Token>) -> OpResult {
         // println!("parse_op {:?}", &tokens);
-
-        let iter = &mut tokens.peekable();
-        let op_token = iter.peek().unwrap();
+        let op_token = tokens.next().unwrap();
         // println!("    op_token {:?}", &op_token);
         match op_token.token_type {
             TokenType::ConstInt
             | TokenType::ConstFloat
             | TokenType::ConstChar
             | TokenType::ConstString
-            | TokenType::ConstBool => Op::new_literal(parse_literal(&op_token)),
-            TokenType::LeftSquare => Op::new_literal(parse_list(tokens, true)),
-            TokenType::LeftCurly => Op::new_literal(parse_block(tokens)),
-            TokenType::Instr => Op::new_instruction(op_token.lexeme.clone()),
-            tt => panic!("Parse Error: Unexpected token type {:?} for Op", tt),
+            | TokenType::ConstBool => {
+                let parsed = parse_literal(&op_token);
+                match parsed {
+                    Ok(lit) => Ok(Op::new_literal(lit)),
+                    Err(e) => Err(format!("Parser Error: {} for {:?}", e, op_token)),
+                }
+            }
+            TokenType::LeftSquare => {
+                let parsed = parse_list(tokens, true);
+                match parsed {
+                    Ok(list) => Ok(Op::new_literal(list)),
+                    Err(e) => Err(format!("Parser Error: {} for {:?}", e, op_token)),
+                }
+            }
+            TokenType::LeftCurly => {
+                let parsed = parse_block(tokens);
+                match parsed {
+                    Ok(block) => Ok(Op::new_literal(block)),
+                    Err(e) => Err(format!("Parser Error: {} for {:?}", e, op_token)),
+                }
+            }
+            TokenType::Instr => Ok(Op::new_instruction(op_token.lexeme.clone())),
+            tt => Err(format!(
+                "Parse Error: Unexpected token type {:?} for Op",
+                tt
+            )),
         }
     }
 
     // parses a list of tokens into a list literal
     // returns the list literal and the remaining tokens
     // https://stackoverflow.com/questions/60087757/passing-an-iterator-into-a-recursive-call-during-an-iteration-in-rust
-    pub fn parse_list(tokens: &mut vec::IntoIter<Token>, nested: bool) -> Literal {
+    pub fn parse_list(tokens: &mut vec::IntoIter<Token>, nested: bool) -> LiteralResult {
         let iter = tokens;
         let mut list: Vec<Literal> = vec![];
         let mut ended_last_list = false;
@@ -228,7 +260,14 @@ pub mod par {
                     // println!("    making nested list at {:?}", token);
                     ended_last_list = false;
                     // make a new list
-                    list.push(parse_list(iter, true));
+                    let parsed = parse_list(iter, true);
+                    match parsed {
+                        Ok(list_lit) => {
+                            // println!("    nested list {:?}", list_lit);
+                            list.push(list_lit);
+                        }
+                        Err(e) => return Err(format!("Parser Error: {} for {:?}", e, token)),
+                    }
                 }
                 // ignore commas
                 TokenType::Comma => {
@@ -242,18 +281,22 @@ pub mod par {
                 }
                 // otherwise, parse the literal and add it to the list
                 _ => {
-                    list.push(parse_literal(&token));
+                    let parsed = parse_literal(&token);
+                    match parsed {
+                        Ok(lit) => list.push(lit),
+                        Err(e) => return Err(format!("Parser Error: {} for {:?}", e, token)),
+                    }
                 }
             }
         }
         // if the list did not close, panic
         if !ended_last_list {
-            panic!("Parsing Error: Unclosed list");
+            return Err(format!("Parsing Error: Unclosed list"));
         }
-        Literal::new_list(list)
+        Ok(Literal::new_list(list))
     }
 
-    pub fn parse_block(tokens: &mut vec::IntoIter<Token>) -> Literal {
+    pub fn parse_block(tokens: &mut vec::IntoIter<Token>) -> LiteralResult {
         // println!("parse_block {:?}", &tokens);
         let mut block: Vec<Exec> = vec![];
         while tokens.len() > 0 {
@@ -266,19 +309,23 @@ pub mod par {
             {
                 break;
             }
-            block.push(parse_exec(tokens));
+            let exec = parse_exec(tokens);
+            match exec {
+                Ok(e) => block.push(e),
+                Err(e) => return Err(format!("Parser Error: {} for {:?}", e, tokens)),
+            }
             // println!("aft----  {:?}", &tokens);
         }
         // println!("finish--  {:?}", &tokens);
         tokens.next();
-        Literal::new_block(block)
+        Ok(Literal::new_block(block))
     }
 
     // parses a literal token into a literal
-    pub fn parse_literal(token: &Token) -> Literal {
+    pub fn parse_literal(token: &Token) -> LiteralResult {
         match token.token_type {
-            TokenType::ConstInt => Literal::new_int(token.lexeme.parse::<i64>().unwrap()),
-            TokenType::ConstFloat => Literal::new_float(token.lexeme.parse::<f64>().unwrap()),
+            TokenType::ConstInt => Ok(Literal::new_int(token.lexeme.parse::<i64>().unwrap())),
+            TokenType::ConstFloat => Ok(Literal::new_float(token.lexeme.parse::<f64>().unwrap())),
             TokenType::ConstChar => {
                 // strip quotes
                 let mut chars = token.lexeme.chars();
@@ -290,20 +337,20 @@ pub mod par {
                 if chars.starts_with('\\') {
                     let c = chars.chars().nth(1).unwrap();
                     match c {
-                        'n' => Literal::new_char('\n'),
-                        'r' => Literal::new_char('\r'),
-                        't' => Literal::new_char('\t'),
-                        '\\' => Literal::new_char('\\'),
-                        '\'' => Literal::new_char('\''),
-                        '\"' => Literal::new_char('\"'),
-                        '0' => Literal::new_char('\0'),
-                        _ => panic!(
+                        'n' => Ok(Literal::new_char('\n')),
+                        'r' => Ok(Literal::new_char('\r')),
+                        't' => Ok(Literal::new_char('\t')),
+                        '\\' => Ok(Literal::new_char('\\')),
+                        '\'' => Ok(Literal::new_char('\'')),
+                        '\"' => Ok(Literal::new_char('\"')),
+                        '0' => Ok(Literal::new_char('\0')),
+                        _ => Err(format!(
                             "Parser Error: Unrecognized character escape sequence `{}`",
                             chars
-                        ),
+                        )),
                     }
                 } else {
-                    Literal::new_char(chars.parse::<char>().unwrap())
+                    Ok(Literal::new_char(chars.parse::<char>().unwrap()))
                 }
             }
             TokenType::ConstString => {
@@ -328,28 +375,32 @@ pub mod par {
                             '\'' => Literal::new_char('\''),
                             '\"' => Literal::new_char('\"'),
                             '0' => Literal::new_char('\0'),
-                            _ => panic!(
-                                "Parser Error: Unrecognized character escape sequence `{}`",
-                                chars
-                            ),
+                            _ => {
+                                return Err(format!(
+                                    "Parser Error: Unrecognized character escape sequence `{}`",
+                                    chars
+                                ))
+                            }
                         });
                     } else {
                         string_chars.push(Literal::new_char(c));
                     }
                 }
-                Literal::new_list(string_chars)
+                Ok(Literal::new_list(string_chars))
             }
             TokenType::ConstBool => {
                 if token.lexeme == "true" {
-                    Literal::new_bool(true)
+                    Ok(Literal::new_bool(true))
                 } else {
-                    Literal::new_bool(false)
+                    Ok(Literal::new_bool(false))
                 }
             }
-            _ => panic!(
-                "Parser Error: Unexpected token type {:?} for Literal",
-                token.token_type
-            ),
+            _ => {
+                return Err(format!(
+                    "Parser Error: Unexpected token type {:?} for Literal",
+                    token.token_type
+                ))
+            }
         }
     }
 }
