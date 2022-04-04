@@ -315,6 +315,42 @@ pub mod eval_instr {
             _ => Err("invalid operands for greater than or equal"),
         }
     }
+    // LOGICAL OPS
+    // all the inputs can be any value
+
+    // return the truthiness of a Value
+    // non-zero is true, zero is false for int, char, and float
+    // non-empty is true, empty is false for lists
+    // blocks are always true
+    pub fn truthiness_of(val: Value) -> bool {
+        match val {
+            Value::Int(a) => a != 0,
+            Value::Char(a) => a != '\0',
+            Value::Float(a) => a != 0.0,
+            Value::List(a) => !a.is_empty(),
+            Value::Block(_) => true,
+            _ => false,
+        }
+    }
+    pub fn lognot(a: Value) -> ValResult {
+        match a {
+            Value::Bool(a) => Ok(Value::Bool(!a)),
+            _ => Ok(Value::Bool(truthiness_of(a))),
+        }
+    }
+
+    pub fn logand(a: Value, b: Value) -> ValResult {
+        match (&a, &b) {
+            (Value::Bool(a), Value::Bool(b)) => Ok(Value::Bool(*a && *b)),
+            _ => Ok(Value::Bool(truthiness_of(a) && truthiness_of(b))),
+        }
+    }
+    pub fn logor(a: Value, b: Value) -> ValResult {
+        match (&a, &b) {
+            (Value::Bool(a), Value::Bool(b)) => Ok(Value::Bool(*a || *b)),
+            _ => Ok(Value::Bool(truthiness_of(a) || truthiness_of(b))),
+        }
+    }
 
     // CONTROL FLOW
     pub fn exec(deque: &mut VecDeque<Value>, place: Place) {
@@ -471,6 +507,10 @@ pub mod eval {
             ">" => binary(deque, place, gt, true),
             "<=" => binary(deque, place, leq, true),
             ">=" => binary(deque, place, geq, true),
+            // LOGICAL OPS
+            "nn" => unary(deque, place, lognot, true),
+            "&&" => binary(deque, place, logand, true),
+            "||" => binary(deque, place, logor, true),
 
             // CONTROL FLOW OPS
             "exec" => exec(deque, place),

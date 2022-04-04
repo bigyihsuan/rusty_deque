@@ -131,7 +131,7 @@ All of these operators push a boolean. All binary operators pop `a` and `b` and 
 
 * `true`, `false`: The boolean constant. Pushes a boolean `true` or `false` onto the deque.
 * `>`,`>=`,`<`,`<=`,`=`: Numerical comparison. You can compare int and float to int and float. You can also compare char to char, but not char to any other type.
-* `&&`, `||`, `^^`: Logical AND, OR, NOT.
+* `&&`, `||`, `nn`: Logical AND, OR, NOT. Non-zero integers and floats, non-empty lists, and blocks are truthy. All other values are falsey.
 
 ## List Operations
 
