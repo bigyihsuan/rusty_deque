@@ -148,6 +148,36 @@ pub mod eval_instr {
         }
     }
 
+    pub fn swap(deque: &mut VecDeque<Value>, place: Place) {
+        match place {
+            Place::Left => {
+                let val_a = deque.pop_front().unwrap();
+                let val_b = deque.pop_front().unwrap();
+                deque.push_front(val_a);
+                deque.push_front(val_b);
+            }
+            Place::Right => {
+                let val_a = deque.pop_back().unwrap();
+                let val_b = deque.pop_back().unwrap();
+                deque.push_back(val_a);
+                deque.push_back(val_b);
+            }
+        }
+    }
+
+    pub fn len(deque: &mut VecDeque<Value>, place: Place) {
+        match place {
+            Place::Left => {
+                let len = deque.len();
+                deque.push_front(Value::Int(len as i64));
+            }
+            Place::Right => {
+                let len = deque.len();
+                deque.push_back(Value::Int(len as i64));
+            }
+        }
+    }
+
     // INT/FLOAT OPS
     pub fn add(a: Value, b: Value) -> ValResult {
         match (a, b) {
@@ -571,6 +601,8 @@ pub mod eval {
             "dup" => dup(deque, place),
             "rot" => rot(deque, place),
             "over" => over(deque, place),
+            "len" => len(deque, place),
+            "swap" => swap(deque, place),
             // INT/FLOAT OPS
             "+" => binary(deque, place, add, true),
             "-" => binary(deque, place, sub, true),

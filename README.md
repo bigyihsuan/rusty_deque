@@ -97,8 +97,10 @@ Instructions have the general philosophy of "discard if failed". If an instructi
 * (`push`: Handled by literals.)
 * `pop`/`$`: Discard one element.
 * `dup`/`:`: Duplicate one element.
+* `swap`: Swap the front/back two elements.
 * `rot`/`@` : Rotate the deque one element towards a direction (either to the front/left `rot~` or the back/right `rot!`).
 * `over`/`^` : Duplicate the element below the top/bottom element.
+* `len`: Push the length of the deque.
 
 ## Castings
 
