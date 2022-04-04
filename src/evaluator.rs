@@ -183,6 +183,138 @@ pub mod eval_instr {
             _ => Err("invalid operands for modulo"),
         }
     }
+    pub fn exp(a: Value, b: Value) -> ValResult {
+        match (a, b) {
+            (Value::Int(a), Value::Int(b)) => Ok(Value::Float((a as f64).powf(b as f64))),
+            (Value::Int(a), Value::Float(b)) => Ok(Value::Float((a as f64).powf(b))),
+            (Value::Float(a), Value::Int(b)) => Ok(Value::Float(a.powf(b as f64))),
+            (Value::Float(a), Value::Float(b)) => Ok(Value::Float(a.powf(b))),
+            _ => Err("invalid operands for exponentiation"),
+        }
+    }
+    pub fn log(a: Value, b: Value) -> ValResult {
+        match (a, b) {
+            (Value::Int(a), Value::Int(b)) => Ok(Value::Float((a as f64).log(b as f64))),
+            (Value::Int(a), Value::Float(b)) => Ok(Value::Float((a as f64).log(b))),
+            (Value::Float(a), Value::Int(b)) => Ok(Value::Float(a.log(b as f64))),
+            (Value::Float(a), Value::Float(b)) => Ok(Value::Float(a.log(b))),
+            _ => Err("invalid operands for logarithm"),
+        }
+    }
+    pub fn neg(a: Value) -> ValResult {
+        match a {
+            Value::Int(a) => Ok(Value::Int(-a)),
+            Value::Float(a) => Ok(Value::Float(-a)),
+            _ => Err("invalid operand for negation"),
+        }
+    }
+    // bitwise ops
+    // all of these act directly on the bits
+    // if any are floats get the bits of those floats
+    // all of these return an int
+    pub fn bitand(a: Value, b: Value) -> ValResult {
+        match (a, b) {
+            (Value::Int(a), Value::Int(b)) => Ok(Value::Int(a & b)),
+            (Value::Int(a), Value::Float(b)) => Ok(Value::Int(((a as u64) & b.to_bits()) as i64)),
+            (Value::Float(a), Value::Int(b)) => Ok(Value::Int((a.to_bits() & (b as u64)) as i64)),
+            (Value::Float(a), Value::Float(b)) => {
+                Ok(Value::Int((a.to_bits() & b.to_bits()) as i64))
+            }
+            _ => Err("invalid operands for bitwise AND"),
+        }
+    }
+    pub fn bitor(a: Value, b: Value) -> ValResult {
+        match (a, b) {
+            (Value::Int(a), Value::Int(b)) => Ok(Value::Int(a | b)),
+            (Value::Int(a), Value::Float(b)) => Ok(Value::Int(((a as u64) | b.to_bits()) as i64)),
+            (Value::Float(a), Value::Int(b)) => Ok(Value::Int((a.to_bits() | (b as u64)) as i64)),
+            (Value::Float(a), Value::Float(b)) => {
+                Ok(Value::Int((a.to_bits() | b.to_bits()) as i64))
+            }
+            _ => Err("invalid operands for bitwise OR"),
+        }
+    }
+    pub fn bitxor(a: Value, b: Value) -> ValResult {
+        match (a, b) {
+            (Value::Int(a), Value::Int(b)) => Ok(Value::Int(a ^ b)),
+            (Value::Int(a), Value::Float(b)) => Ok(Value::Int(((a as u64) ^ b.to_bits()) as i64)),
+            (Value::Float(a), Value::Int(b)) => Ok(Value::Int((a.to_bits() ^ (b as u64)) as i64)),
+            (Value::Float(a), Value::Float(b)) => {
+                Ok(Value::Int((a.to_bits() ^ b.to_bits()) as i64))
+            }
+            _ => Err("invalid operands for bitwise XOR"),
+        }
+    }
+    pub fn bitnot(a: Value) -> ValResult {
+        match a {
+            Value::Int(a) => Ok(Value::Int(!a)),
+            Value::Float(a) => Ok(Value::Int(!(a.to_bits()) as i64)),
+            _ => Err("invalid operand for bitwise NOT"),
+        }
+    }
+    // COMPARISON
+    // all the inputs can be char, int, or float
+    // all of these return a bool
+    pub fn eq(a: Value, b: Value) -> ValResult {
+        match (a, b) {
+            (Value::Int(a), Value::Int(b)) => Ok(Value::Bool(a == b)),
+            (Value::Int(a), Value::Float(b)) => Ok(Value::Bool(a as f64 == b)),
+            (Value::Float(a), Value::Int(b)) => Ok(Value::Bool(a == b as f64)),
+            (Value::Float(a), Value::Float(b)) => Ok(Value::Bool(a == b)),
+            (Value::Char(a), Value::Char(b)) => Ok(Value::Bool(a == b)),
+            _ => Err("invalid operands for equality"),
+        }
+    }
+    pub fn neq(a: Value, b: Value) -> ValResult {
+        match (a, b) {
+            (Value::Int(a), Value::Int(b)) => Ok(Value::Bool(a != b)),
+            (Value::Int(a), Value::Float(b)) => Ok(Value::Bool(a as f64 != b)),
+            (Value::Float(a), Value::Int(b)) => Ok(Value::Bool(a != b as f64)),
+            (Value::Float(a), Value::Float(b)) => Ok(Value::Bool(a != b)),
+            (Value::Char(a), Value::Char(b)) => Ok(Value::Bool(a != b)),
+            _ => Err("invalid operands for inequality"),
+        }
+    }
+    pub fn lt(a: Value, b: Value) -> ValResult {
+        match (a, b) {
+            (Value::Int(a), Value::Int(b)) => Ok(Value::Bool(a < b)),
+            (Value::Int(a), Value::Float(b)) => Ok(Value::Bool((a as f64) < b)),
+            (Value::Float(a), Value::Int(b)) => Ok(Value::Bool(a < b as f64)),
+            (Value::Float(a), Value::Float(b)) => Ok(Value::Bool(a < b)),
+            (Value::Char(a), Value::Char(b)) => Ok(Value::Bool(a < b)),
+            _ => Err("invalid operands for less than"),
+        }
+    }
+    pub fn gt(a: Value, b: Value) -> ValResult {
+        match (a, b) {
+            (Value::Int(a), Value::Int(b)) => Ok(Value::Bool(a > b)),
+            (Value::Int(a), Value::Float(b)) => Ok(Value::Bool(a as f64 > b)),
+            (Value::Float(a), Value::Int(b)) => Ok(Value::Bool(a > b as f64)),
+            (Value::Float(a), Value::Float(b)) => Ok(Value::Bool(a > b)),
+            (Value::Char(a), Value::Char(b)) => Ok(Value::Bool(a > b)),
+            _ => Err("invalid operands for greater than"),
+        }
+    }
+    pub fn leq(a: Value, b: Value) -> ValResult {
+        match (a, b) {
+            (Value::Int(a), Value::Int(b)) => Ok(Value::Bool(a <= b)),
+            (Value::Int(a), Value::Float(b)) => Ok(Value::Bool(a as f64 <= b)),
+            (Value::Float(a), Value::Int(b)) => Ok(Value::Bool(a <= b as f64)),
+            (Value::Float(a), Value::Float(b)) => Ok(Value::Bool(a <= b)),
+            (Value::Char(a), Value::Char(b)) => Ok(Value::Bool(a <= b)),
+            _ => Err("invalid operands for less than or equal"),
+        }
+    }
+    pub fn geq(a: Value, b: Value) -> ValResult {
+        match (a, b) {
+            (Value::Int(a), Value::Int(b)) => Ok(Value::Bool(a >= b)),
+            (Value::Int(a), Value::Float(b)) => Ok(Value::Bool(a as f64 >= b)),
+            (Value::Float(a), Value::Int(b)) => Ok(Value::Bool(a >= b as f64)),
+            (Value::Float(a), Value::Float(b)) => Ok(Value::Bool(a >= b)),
+            (Value::Char(a), Value::Char(b)) => Ok(Value::Bool(a >= b)),
+            _ => Err("invalid operands for greater than or equal"),
+        }
+    }
 
     // IO
 
@@ -287,10 +419,10 @@ pub mod eval {
     pub fn call_instr(deque: &mut VecDeque<Value>, instr: String, place: Place) {
         match instr.as_str() {
             // DEQUE OPS
-            "pop" | "$" => pop(deque, place),
-            "dup" | ":" => dup(deque, place),
-            "rot" | "@" => rot(deque, place),
-            "over" | "^" => over(deque, place),
+            "pop" => pop(deque, place),
+            "dup" => dup(deque, place),
+            "rot" => rot(deque, place),
+            "over" => over(deque, place),
             // INT/FLOAT OPS
             "+" => binary(deque, place, add, true),
             "-" => binary(deque, place, sub, true),
@@ -298,6 +430,20 @@ pub mod eval {
             "/" => binary(deque, place, intdiv, true),
             "//" => binary(deque, place, floatdiv, true),
             "%" => binary(deque, place, modulo, true),
+            "exp" => binary(deque, place, exp, true),
+            "log" => binary(deque, place, log, true),
+            "--" => unary(deque, place, neg, true),
+            "&" => binary(deque, place, bitand, true),
+            "|" => binary(deque, place, bitor, true),
+            "^" => binary(deque, place, bitxor, true),
+            "n" => unary(deque, place, bitnot, true),
+            // COMPARISON OPS
+            "==" => binary(deque, place, eq, true),
+            "!=" => binary(deque, place, neq, true),
+            "<" => binary(deque, place, lt, true),
+            ">" => binary(deque, place, gt, true),
+            "<=" => binary(deque, place, leq, true),
+            ">=" => binary(deque, place, geq, true),
 
             // IO
             "ol" => ol(deque, place),
