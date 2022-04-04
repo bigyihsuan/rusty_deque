@@ -10,7 +10,7 @@ pub mod eval_value {
 }
 
 pub mod eval_instr {
-    use super::eval_value::*;
+    use super::{eval::*, eval_value::*};
     use crate::parser::par_ast::*;
     use std::collections::VecDeque;
 
@@ -316,8 +316,35 @@ pub mod eval_instr {
         }
     }
 
-    // IO
+    // CONTROL FLOW
+    pub fn exec(deque: &mut VecDeque<Value>, place: Place) {
+        let block = match place {
+            Place::Left => deque.pop_front().unwrap(),
+            Place::Right => deque.pop_back().unwrap(),
+        };
+        if let Value::Block(block) = block {
+            for exec in block {
+                match exec {
+                    Exec::Left(op) => match op {
+                        Op::Literal(lit) => {
+                            deque.push_front(lit);
+                        }
+                        Op::Instruction(instruction) => call_instr(deque, instruction, Place::Left),
+                    },
+                    Exec::Right(op) => match op {
+                        Op::Literal(lit) => {
+                            deque.push_back(lit);
+                        }
+                        Op::Instruction(instruction) => {
+                            call_instr(deque, instruction, Place::Right)
+                        }
+                    },
+                }
+            }
+        }
+    }
 
+    // IO
     pub fn ol(stack: &mut VecDeque<Value>, place: Place) {
         let literal = match place {
             Place::Left => stack.pop_front().unwrap(),
@@ -444,6 +471,9 @@ pub mod eval {
             ">" => binary(deque, place, gt, true),
             "<=" => binary(deque, place, leq, true),
             ">=" => binary(deque, place, geq, true),
+
+            // CONTROL FLOW OPS
+            "exec" => exec(deque, place),
 
             // IO
             "ol" => ol(deque, place),

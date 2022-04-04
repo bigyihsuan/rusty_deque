@@ -153,6 +153,7 @@ List operations still operate on `[Char]` because `[Char]` is still a list.
 
 All of these instructs pop blocks that are executed. In the following, a "condition block" is a block that leaves a boolean on the stack when provided a stack that satisfies its instructions. A "body block" is some block of code.
 
+* `exec`: Pops and executes a block.
 * `loop`: Infinite loop.
 * `for`: Pops a lower bound `a`, upper bound `b`, an increment block `c`, and a body block. Equivalent to C-like `for (i=a; a < b; a+=c) { block; }`.
 * `in`: Pushes the current loop index.
