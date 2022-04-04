@@ -17,6 +17,7 @@ pub mod eval_instr {
     type ValResult = Result<Value, &'static str>;
     type Unary = fn(a: Value) -> ValResult;
     type Binary = fn(a: Value, b: Value) -> ValResult;
+    type Ternary = fn(a: Value, b: Value, b: Value) -> ValResult;
 
     // bool is to push the result back to the stack
     pub fn unary(deque: &mut VecDeque<Value>, place: Place, func: Unary, push_result: bool) {
@@ -61,6 +62,34 @@ pub mod eval_instr {
                 let val_a = deque.pop_back().unwrap();
                 let val_b = deque.pop_back().unwrap();
                 let result = func(val_a, val_b);
+                if push_result {
+                    match result {
+                        Ok(v) => deque.push_back(v),
+                        Err(e) => panic!("{}", e),
+                    }
+                }
+            }
+        }
+    }
+    pub fn ternary(deque: &mut VecDeque<Value>, place: Place, func: Ternary, push_result: bool) {
+        match place {
+            Place::Left => {
+                let val_a = deque.pop_front().unwrap();
+                let val_b = deque.pop_front().unwrap();
+                let val_c = deque.pop_front().unwrap();
+                let result = func(val_a, val_b, val_c);
+                if push_result {
+                    match result {
+                        Ok(v) => deque.push_front(v),
+                        Err(e) => panic!("{}", e),
+                    }
+                }
+            }
+            Place::Right => {
+                let val_a = deque.pop_back().unwrap();
+                let val_b = deque.pop_back().unwrap();
+                let val_c = deque.pop_back().unwrap();
+                let result = func(val_a, val_b, val_c);
                 if push_result {
                     match result {
                         Ok(v) => deque.push_back(v),
@@ -352,6 +381,61 @@ pub mod eval_instr {
         }
     }
 
+    // LIST OPS
+    pub fn listcat(a: Value, b: Value) -> ValResult {
+        // 2 non-lists makes a list
+        // a list and a non-list appends the non-list to the list
+        // a list and a list concatenates the lists
+        match (&a, &b) {
+            (Value::List(a), Value::List(b)) => {
+                let mut new_list = a.clone();
+                new_list.append(&mut b.clone());
+                Ok(Value::List(new_list))
+            }
+            (Value::List(a), b) => {
+                let mut a = a.clone();
+                a.push(b.clone());
+                Ok(Value::List(a))
+            }
+            (_, Value::List(b)) => {
+                let mut b = b.clone();
+                b.push(a);
+                Ok(Value::List(b))
+            }
+            _ => Ok(Value::List(vec![a, b])),
+        }
+    }
+    pub fn listslice(list: Value, start: Value, end: Value) -> ValResult {
+        match (&list, &start, &end) {
+            (Value::List(list), Value::Int(start), Value::Int(end)) => {
+                let new_list = list.as_slice()[*start as usize..*end as usize].to_vec();
+                Ok(Value::List(new_list))
+            }
+            _ => Err("invalid operands for list slice"),
+        }
+    }
+    pub fn listindex(list: Value, index: Value) -> ValResult {
+        match (&list, &index) {
+            (Value::List(list), Value::Int(index)) | (Value::Int(index), Value::List(list)) => {
+                if index < &0 {
+                    return Err("list index out of bounds");
+                }
+                match list.get(*index as usize) {
+                    Some(val) => Ok(val.clone()),
+                    None => Err("list index out of bounds"),
+                }
+            }
+            _ => Err("invalid operands for list index"),
+        }
+    }
+    pub fn listlen(list: Value) -> ValResult {
+        match list {
+            Value::List(list) => Ok(Value::Int(list.len() as i64)),
+            _ => Err("invalid operands for list length"),
+        }
+    }
+    // ld implemented in call_instr
+
     // CONTROL FLOW
     pub fn exec(deque: &mut VecDeque<Value>, place: Place) {
         let block = match place {
@@ -511,6 +595,29 @@ pub mod eval {
             "nn" => unary(deque, place, lognot, true),
             "&&" => binary(deque, place, logand, true),
             "||" => binary(deque, place, logor, true),
+
+            // LIST OPS
+            "l+" => binary(deque, place, listcat, true),
+            "l/" => ternary(deque, place, listslice, true),
+            "li" => binary(deque, place, listindex, true),
+            "ll" => unary(deque, place, listlen, true),
+            "ld" => {
+                let list = match place {
+                    Place::Left => deque.pop_front().unwrap(),
+                    Place::Right => deque.pop_back().unwrap(),
+                };
+                match list {
+                    Literal::List(list) => {
+                        for elem in list.iter() {
+                            match place {
+                                Place::Left => deque.push_front(elem.clone()),
+                                Place::Right => deque.push_back(elem.clone()),
+                            }
+                        }
+                    }
+                    _ => panic!("ld: expected list"),
+                };
+            }
 
             // CONTROL FLOW OPS
             "exec" => exec(deque, place),

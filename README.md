@@ -140,10 +140,10 @@ All of these operators push a boolean. All binary operators pop `a` and `b` and 
 List operations still operate on `[Char]` because `[Char]` is still a list.
 
 * `l+`: Concatentates to result the following:
-  * `(a, b -- [a, b]`
-  * `(a, [... b] -- [... b, a]`
-  * `([... a], b -- [... a, b]`
-  * `([... a], [... b] -- [... a, ... b]`
+  * `(a, b -- [a, b])`
+  * `(a, [... b] -- [... b, a])`
+  * `([... a], b -- [... a, b])`
+  * `([... a], [... b] -- [... a, ... b])`
 * `l/`: List slice. Pops a list, and 2 ints `a` and `b`. Pushes a slice of the list from index `a`, inclusive, to `b`, exclusive.
 * `li`: List index. Pops a list and an int, pushes the element at that index. Discards if the index is outside of list bounds.
 * `ll`: List length. Pops a list and pushes the number of elements in the list.
