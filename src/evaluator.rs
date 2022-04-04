@@ -407,7 +407,8 @@ pub mod eval_instr {
     }
     pub fn listslice(list: Value, start: Value, end: Value) -> ValResult {
         match (&list, &start, &end) {
-            (Value::List(list), Value::Int(start), Value::Int(end)) => {
+            (Value::List(list), Value::Int(start), Value::Int(end))
+            | (Value::Int(end), Value::Int(start), Value::List(list)) => {
                 let new_list = list.as_slice()[*start as usize..*end as usize].to_vec();
                 Ok(Value::List(new_list))
             }
