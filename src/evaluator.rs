@@ -752,6 +752,39 @@ pub mod eval {
 
             // CONTROL FLOW OPS
             "exec" => exec(deque, place),
+            "loop" => {
+                // pop a block and run it forever
+                let block = match &place {
+                    Place::Left => deque.pop_front().unwrap(),
+                    Place::Right => deque.pop_back().unwrap(),
+                };
+                if let Value::Block(block) = block {
+                    loop {
+                        for exec in block.iter() {
+                            match exec {
+                                Exec::Left(op) => match op {
+                                    Op::Literal(lit) => {
+                                        deque.push_front(lit.clone());
+                                    }
+                                    Op::Instruction(instruction) => {
+                                        call_instr(deque, instruction.clone(), Place::Left)
+                                    }
+                                },
+                                Exec::Right(op) => match op {
+                                    Op::Literal(lit) => {
+                                        deque.push_back(lit.clone());
+                                    }
+                                    Op::Instruction(instruction) => {
+                                        call_instr(deque, instruction.clone(), Place::Right)
+                                    }
+                                },
+                            }
+                        }
+                    }
+                } else {
+                    println!("loop: expected block");
+                }
+            }
 
             // IO
             "il" => il(deque, place),
