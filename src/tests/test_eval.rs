@@ -274,4 +274,9 @@ mod tests {
             assert_eq!(deque, *expected);
         }
     }
+
+    #[test]
+    fn test_eval_for_loop() -> Result<(), String> {
+        unimplemented!()
+    }
 }

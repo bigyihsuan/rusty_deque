@@ -174,7 +174,6 @@ All of these instructs pop blocks that are executed. In the following, a "condit
 ## Input and Output
 
 * `il`: Consumes and pushes a line as a string from STDIN.
-* `iw`: Consumes and pushes a word as a string from STDIN. A word consumes up to the next whitepsace.
-* `ia`: Consumes all bytes from STDIN and pushes it as a string to the stack.
+* `ia`: Consumes everything from STDIN and pushes it as a string to the stack.
 * `ol`: Pops and prints an element, with a newline. `[Char]` is printed as a string.
 * `ow`: Pops and prints an element. `[Char]` is printed as a string.

@@ -185,17 +185,22 @@ pub mod par {
         match op {
             Ok(op) => {
                 let mut iter = tokens.peekable();
-                let sigil = iter.peek().unwrap();
-                // println!("    exec sigil {:?}", &sigil);
-                match sigil.token_type {
-                    TokenType::Bang => Ok(Exec::new_left(op)),
-                    TokenType::Tilde => Ok(Exec::new_right(op)),
-                    _ => Err(format!(
-                        "Parser Error: Expected sigil Bang or Tilde, instead got {:?}",
-                        sigil.token_type
-                    )),
+                let sigil = iter.peek();
+                match sigil {
+                    Some(_) => match sigil.unwrap().token_type {
+                        TokenType::Bang => Ok(Exec::new_left(op)),
+                        TokenType::Tilde => Ok(Exec::new_right(op)),
+                        _ => Err(format!(
+                            "Parser Error: Expected sigil Bang or Tilde, instead got {:?}",
+                            sigil.unwrap().token_type
+                        )),
+                    },
+                    None => {
+                        Err("Parser Error: Expected sigil Bang or Tilde, but got None".to_string())
+                    }
                 }
             }
+            // println!("    exec sigil {:?}", &sigil);
             Err(e) => Err(e),
         }
     }

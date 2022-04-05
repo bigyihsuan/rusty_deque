@@ -11,10 +11,17 @@ pub mod eval_value {
 
 pub mod eval_instr {
     use super::{eval::*, eval_value::*};
-    use crate::parser::par_ast::*;
-    use std::collections::VecDeque;
+    use crate::{
+        lexer::lex::tokenize_code,
+        parser::{par::parse_literal, par_ast::*},
+    };
+    use std::{
+        collections::VecDeque,
+        io::{self, Read},
+    };
 
     type ValResult = Result<Value, &'static str>;
+    type Nullary = fn() -> ValResult;
     type Unary = fn(a: Value) -> ValResult;
     type Binary = fn(a: Value, b: Value) -> ValResult;
     type Ternary = fn(a: Value, b: Value, b: Value) -> ValResult;
@@ -534,6 +541,54 @@ pub mod eval_instr {
     }
 
     // IO
+    pub fn il(deque: &mut VecDeque<Value>, place: Place) {
+        let mut input = String::new();
+        match io::stdin().read_line(&mut input) {
+            Ok(_) => {
+                let input = input.trim().to_string();
+                // turn input into a Literal::List(Literal::Char)
+                let mut input_list = Vec::new();
+                for c in input.chars() {
+                    input_list.push(Value::Char(c));
+                }
+                let input_list = Value::List(input_list);
+                match place {
+                    Place::Left => deque.push_front(input_list),
+                    Place::Right => deque.push_back(input_list),
+                }
+            }
+            Err(_) => {
+                println!("error reading input");
+                std::process::exit(1);
+            }
+        }
+    }
+    pub fn ia(deque: &mut VecDeque<Value>, place: Place) {
+        // reads everything from stdin and puts it into a list of chars
+        let mut input = String::new();
+        let stdin = io::stdin();
+        let mut handle = stdin.lock();
+        match handle.read_to_string(&mut input) {
+            Ok(_) => {
+                let input = input.trim().to_string();
+                // turn input into a Literal::List(Literal::Char)
+                let mut input_list = Vec::new();
+                for c in input.chars() {
+                    input_list.push(Value::Char(c));
+                }
+                let input_list = Value::List(input_list);
+                match place {
+                    Place::Left => deque.push_front(input_list),
+                    Place::Right => deque.push_back(input_list),
+                }
+            }
+            Err(_) => {
+                println!("error reading input");
+                std::process::exit(1);
+            }
+        }
+    }
+
     pub fn ol(stack: &mut VecDeque<Value>, place: Place) {
         let literal = match place {
             Place::Left => stack.pop_front().unwrap(),
@@ -699,6 +754,8 @@ pub mod eval {
             "exec" => exec(deque, place),
 
             // IO
+            "il" => il(deque, place),
+            "ia" => ia(deque, place),
             "ol" => ol(deque, place),
             "ow" => ow(deque, place),
             _ => println!("Unknown instruction: {}", instr),

@@ -142,15 +142,7 @@ pub fn run_code(
             // run
             let deque = evaluator::eval::run_ast(deque, ast);
             if print_stack {
-                let mut out_str = "(".to_string();
-                let mut deque_iter = deque.iter();
-                for _ in 0..deque.len() {
-                    let val = deque_iter.next().unwrap();
-                    out_str.push_str(val.clone().to_string().as_str());
-                    out_str.push_str(", ");
-                }
-                out_str.push_str(")");
-                println!("{}", out_str);
+                print_deque(&deque);
             }
             Ok(deque)
         }
@@ -159,6 +151,18 @@ pub fn run_code(
             Err(e)
         }
     }
+}
+
+pub fn print_deque(deque: &VecDeque<Value>) {
+    let mut out_str = "(".to_string();
+    let mut deque_iter = deque.iter();
+    for _ in 0..deque.len() {
+        let val = deque_iter.next().unwrap();
+        out_str.push_str(val.clone().to_string().as_str());
+        out_str.push_str(", ");
+    }
+    out_str.push_str(")");
+    println!("{}", out_str);
 }
 
 pub fn repl(print_tokens: bool, print_ast: bool, print_stack: bool) {
@@ -189,6 +193,9 @@ pub fn repl(print_tokens: bool, print_ast: bool, print_stack: bool) {
                     }
                     Err(e) => {
                         println!("{}", e);
+                        if print_stack {
+                            print_deque(&deque);
+                        }
                     }
                 }
             }
