@@ -100,6 +100,7 @@ fn main() {
         // if filename, run file
         // read from file
         let contents = std::fs::read_to_string(filename).expect("file not found");
+        let contents = contents.trim().to_string();
         let result = run_code(Option::None, contents, print_tokens, print_ast, print_stack);
         match result {
             Ok(_) => std::process::exit(0),
