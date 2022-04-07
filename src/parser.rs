@@ -57,6 +57,7 @@ pub mod par_ast {
         Char(char),
         List(Vec<Literal>),
         Block(Vec<Exec>),
+        None,
     }
 
     impl Literal {
@@ -79,7 +80,7 @@ pub mod par_ast {
             Literal::Block(value)
         }
 
-        pub fn to_string(self) -> String {
+        pub fn to_string(&self) -> String {
             match self {
                 Literal::Int(i) => i.to_string(),
                 Literal::Float(f) => f.to_string(),
@@ -135,6 +136,7 @@ pub mod par_ast {
                     s.push_str("}");
                     s
                 }
+                _ => "".to_string(),
             }
         }
     }

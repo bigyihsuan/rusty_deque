@@ -1,0 +1,1 @@
+{{{{ol~}~ {pop~ "Fizz"~ ol~}~ {3~ over~ %~ 0~ =~}~ itl~ }~ {pop~ "Buzz"~ ol~}~ {5~ over~ %~ 0~ =~}~ itl~}~ {pop~ "FizzBuzz"~ ol~}~ {15~ over~ %~ 0~ =~}~ itl~ }~ 1~ 101~ 1~ range~

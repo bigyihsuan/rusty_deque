@@ -18,7 +18,7 @@ Inspired by [this Esolangs page](https://esolangs.org/wiki/Deque) and [this Conc
 
 ### Hello World
 ```bash
-"Hello World!"~ ow~
+"Hello World!"~ ol~
 ```
 
 ### Cat
@@ -102,6 +102,7 @@ Instructions have the general philosophy of "discard if failed". If an instructi
 
 ## Deque Operations
 * (`push`: Handled by literals.)
+* `clear`: Clear the deque.****
 * `pop`: Discard one element.
 * `dup`: Duplicate one element.
 * `swap`: Swap the front/back two elements.
@@ -165,15 +166,15 @@ All of these instructs pop blocks that are executed. In the following, a "condit
 
 * `exec`: Pops and executes a block.
 * `loop`: Infinite loop.
-* `for`: Pops a lower bound `a`, upper bound `b`, an increment block `c`, and a body block. Equivalent to C-like `for (i=a; a < b; a+=c) { block; }`.
+* `range`: Pops a lower bound `a`, upper bound `b`, an increment value `c`, and a body block. Equvalent to Python-like `for i in range(a,b,c): body`. Pushes the current index `i` onto the stack before executing the body block.
 * `in`: Pushes the current loop index.
-* `while`: Pops 2 blocks: a condition block, and a body block. The body block executes while the condition block is true.
+* `while`: Pops 2 blocks: a condition block, and a body block. The body block executes while the condition block is true. More specifically, it runs the condition block first, checks for a truthy value on the top/front of the deque (depending on which side `while` was called on), and if so, executes the body block. This then repeats until it sees a falsy value after executing the condition block.
 * `break`: Exit the current loop.
 * `itl`: If-Then-Else. Pops 3 blocks: a condtion block, a true block, and a false block. The blocks execute based on the condition block's output. If true, the true block executes. If false, the false block executes.
 
 ## Input and Output
 
-* `il`: Consumes and pushes a line as a string from STDIN.
+* `il`: Consumes and pushes a line as a string from STDIN. Strips off the newline.
 * `ia`: Consumes everything from STDIN and pushes it as a string to the stack.
 * `ol`: Pops and prints an element, with a newline. `[Char]` is printed as a string.
 * `ow`: Pops and prints an element. `[Char]` is printed as a string.

@@ -3,6 +3,7 @@ pub mod eval_value {
 
     pub type Value = Literal;
 
+    #[derive(Debug, Clone, Copy)]
     pub enum Place {
         Left,
         Right,
@@ -18,15 +19,32 @@ pub mod eval_instr {
     use std::{
         collections::VecDeque,
         io::{self, Read},
+        str::FromStr,
     };
 
     type ValResult = Result<Value, &'static str>;
-    type Nullary = fn() -> ValResult;
+    type Nilary = fn() -> ValResult;
     type Unary = fn(a: Value) -> ValResult;
     type Binary = fn(a: Value, b: Value) -> ValResult;
-    type Ternary = fn(a: Value, b: Value, b: Value) -> ValResult;
+    type Ternary = fn(a: Value, b: Value, c: Value) -> ValResult;
+    type Quaternary = fn(a: Value, b: Value, c: Value, d: Value) -> ValResult;
 
     // bool is to push the result back to the stack
+    pub fn nilary(deque: &mut VecDeque<Value>, place: Place, func: Nilary, push_result: bool) {
+        let result = func();
+        match place {
+            Place::Left => {
+                if push_result {
+                    deque.push_front(result.unwrap());
+                }
+            }
+            Place::Right => {
+                if push_result {
+                    deque.push_back(result.unwrap());
+                }
+            }
+        }
+    }
     pub fn unary(deque: &mut VecDeque<Value>, place: Place, func: Unary, push_result: bool) {
         match place {
             Place::Left => {
@@ -34,7 +52,10 @@ pub mod eval_instr {
                 let result = func(val);
                 if push_result {
                     match result {
-                        Ok(v) => deque.push_front(v),
+                        Ok(v) => match v {
+                            Value::None => {}
+                            _ => deque.push_front(v),
+                        },
                         Err(e) => println!("{}", e),
                     }
                 }
@@ -44,7 +65,10 @@ pub mod eval_instr {
                 let result = func(val);
                 if push_result {
                     match result {
-                        Ok(v) => deque.push_back(v),
+                        Ok(v) => match v {
+                            Value::None => {}
+                            _ => deque.push_back(v),
+                        },
                         Err(e) => println!("{}", e),
                     }
                 }
@@ -60,7 +84,10 @@ pub mod eval_instr {
                 let result = func(val_a, val_b);
                 if push_result {
                     match result {
-                        Ok(v) => deque.push_front(v),
+                        Ok(v) => match v {
+                            Value::None => {}
+                            _ => deque.push_front(v),
+                        },
                         Err(e) => println!("{}", e),
                     }
                 }
@@ -71,7 +98,10 @@ pub mod eval_instr {
                 let result = func(val_a, val_b);
                 if push_result {
                     match result {
-                        Ok(v) => deque.push_back(v),
+                        Ok(v) => match v {
+                            Value::None => {}
+                            _ => deque.push_back(v),
+                        },
                         Err(e) => println!("{}", e),
                     }
                 }
@@ -87,7 +117,10 @@ pub mod eval_instr {
                 let result = func(val_a, val_b, val_c);
                 if push_result {
                     match result {
-                        Ok(v) => deque.push_front(v),
+                        Ok(v) => match v {
+                            Value::None => {}
+                            _ => deque.push_front(v),
+                        },
                         Err(e) => println!("{}", e),
                     }
                 }
@@ -99,7 +132,52 @@ pub mod eval_instr {
                 let result = func(val_a, val_b, val_c);
                 if push_result {
                     match result {
-                        Ok(v) => deque.push_back(v),
+                        Ok(v) => match v {
+                            Value::None => {}
+                            _ => deque.push_back(v),
+                        },
+                        Err(e) => println!("{}", e),
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn quaternary(
+        deque: &mut VecDeque<Value>,
+        place: Place,
+        func: Quaternary,
+        push_result: bool,
+    ) {
+        match place {
+            Place::Left => {
+                let val_a = deque.pop_front().unwrap();
+                let val_b = deque.pop_front().unwrap();
+                let val_c = deque.pop_front().unwrap();
+                let val_d = deque.pop_front().unwrap();
+                let result = func(val_a, val_b, val_c, val_d);
+                if push_result {
+                    match result {
+                        Ok(v) => match v {
+                            Value::None => {}
+                            _ => deque.push_front(v),
+                        },
+                        Err(e) => println!("{}", e),
+                    }
+                }
+            }
+            Place::Right => {
+                let val_a = deque.pop_back().unwrap();
+                let val_b = deque.pop_back().unwrap();
+                let val_c = deque.pop_back().unwrap();
+                let val_d = deque.pop_back().unwrap();
+                let result = func(val_a, val_b, val_c, val_d);
+                if push_result {
+                    match result {
+                        Ok(v) => match v {
+                            Value::None => {}
+                            _ => deque.push_back(v),
+                        },
                         Err(e) => println!("{}", e),
                     }
                 }
@@ -108,6 +186,10 @@ pub mod eval_instr {
     }
 
     // DEQUE OPS
+    pub fn clear(deque: &mut VecDeque<Value>, place: Place) {
+        deque.clear();
+    }
+
     pub fn pop(deque: &mut VecDeque<Value>, place: Place) {
         match place {
             Place::Left => {
@@ -120,12 +202,16 @@ pub mod eval_instr {
     }
 
     pub fn dup(stack: &mut VecDeque<Value>, place: Place) {
-        let literal = match place {
-            Place::Left => stack.pop_front().unwrap(),
-            Place::Right => stack.pop_back().unwrap(),
-        };
-        stack.push_front(literal.clone());
-        stack.push_front(literal);
+        match place {
+            Place::Left => {
+                let val = stack.front().unwrap().clone();
+                stack.push_front(val);
+            }
+            Place::Right => {
+                let val = stack.back().unwrap().clone();
+                stack.push_back(val);
+            }
+        }
     }
 
     pub fn rot(deque: &mut VecDeque<Value>, place: Place) {
@@ -185,12 +271,42 @@ pub mod eval_instr {
         }
     }
     // CASTINGS
+
+    // attempts to cast a Value::List of chars to a type T
+    // it should only attempt to cast if all the elements in the list are Value::Char
+    // Returns a Result, which is Ok(T) if the cast is successful, and Err(String) if it is not
+    pub fn try_cast_list_to<T>(list: Vec<Value>) -> Result<T, String>
+    where
+        T: FromStr,
+    {
+        let mut chars: Vec<char> = Vec::new();
+        for ele in list {
+            match ele {
+                Value::Char(c) => chars.push(c),
+                _ => return Err(format!("{} is not a char", ele.to_string())),
+            }
+        }
+        let str_val: String = chars.iter().collect();
+        // cast the str to the desired type
+        match str_val.parse::<T>() {
+            Ok(v) => Ok(v),
+            Err(e) => Err("Could not cast to desired type".to_string()),
+        }
+    }
+
     pub fn cast_to_int(val: Value) -> ValResult {
         match val {
             Value::Int(i) => Ok(Value::Int(i)),
             Value::Float(f) => Ok(Value::Int(f as i64)),
             Value::Bool(b) => Ok(Value::Int(if b { 1 } else { 0 })),
             Value::Char(c) => Ok(Value::Int(c as i64)),
+            Value::List(l) => {
+                let result = try_cast_list_to::<i64>(l);
+                match result {
+                    Ok(v) => Ok(Value::Int(v)),
+                    Err(_) => Err("Could not cast to int"),
+                }
+            }
             _ => Err("Cannot cast to int"),
         }
     }
@@ -200,6 +316,13 @@ pub mod eval_instr {
             Value::Float(f) => Ok(Value::Float(f)),
             Value::Bool(b) => Ok(Value::Float(if b { 1.0 } else { 0.0 })),
             Value::Char(c) => Ok(Value::Float(c as i64 as f64)),
+            Value::List(l) => {
+                let result = try_cast_list_to::<f64>(l);
+                match result {
+                    Ok(v) => Ok(Value::Float(v)),
+                    Err(_) => Err("Could not cast to float"),
+                }
+            }
             _ => Err("Cannot cast to float"),
         }
     }
@@ -211,6 +334,7 @@ pub mod eval_instr {
             Value::Char(_) => Ok(Value::Bool(truthiness_of(val))),
             Value::List(_) => Ok(Value::Bool(truthiness_of(val))),
             Value::Block(_) => Ok(Value::Bool(truthiness_of(val))),
+            Value::None => Ok(Value::Bool(false)), // this shouldn't happen, but if it doesn None is falsy
         }
     }
     pub fn cast_to_char(val: Value) -> ValResult {
@@ -432,6 +556,7 @@ pub mod eval_instr {
             Value::Char(a) => a != '\0',
             Value::Float(a) => a != 0.0,
             Value::List(a) => !a.is_empty(),
+            Value::Bool(a) => a,
             Value::Block(_) => true,
             _ => false,
         }
@@ -540,8 +665,156 @@ pub mod eval_instr {
         }
     }
 
+    // utility function to execute a block for the control flow instructions
+    pub fn exec_block(deque: &mut VecDeque<Value>, place: Place, block: &Value) {
+        if let Value::Block(block) = block {
+            for exec in block {
+                // println!("{:?}", deque);
+                // println!("executing: {:?}", exec);
+                match exec {
+                    Exec::Left(op) => match op {
+                        Op::Literal(lit) => {
+                            deque.push_front(lit.clone());
+                        }
+                        Op::Instruction(instruction) => {
+                            call_instr(deque, instruction.clone(), Place::Left)
+                        }
+                    },
+                    Exec::Right(op) => match op {
+                        Op::Literal(lit) => {
+                            deque.push_back(lit.clone());
+                        }
+                        Op::Instruction(instruction) => {
+                            call_instr(deque, instruction.clone(), Place::Right)
+                        }
+                    },
+                }
+            }
+        }
+    }
+
+    pub fn loop_instr(deque: &mut VecDeque<Value>, place: Place) {
+        // pop a block and run it forever
+        let block = match &place {
+            Place::Left => deque.pop_front().unwrap(),
+            Place::Right => deque.pop_back().unwrap(),
+        };
+        if let Value::Block(_) = &block {
+            loop {
+                exec_block(deque, place, &block);
+            }
+        } else {
+            println!("loop: expected block");
+        }
+    }
+
+    pub fn range(deque: &mut VecDeque<Value>, place: Place) {
+        // pop 4 times:
+        // lower bound, upper bound, increment size, loop body block
+        // run the loop body block for each value in the range
+        let (lower, upper, inc, body) = match &place {
+            Place::Left => (
+                deque.pop_front().unwrap(),
+                deque.pop_front().unwrap(),
+                deque.pop_front().unwrap(),
+                deque.pop_front().unwrap(),
+            ),
+            Place::Right => (
+                deque.pop_back().unwrap(),
+                deque.pop_back().unwrap(),
+                deque.pop_back().unwrap(),
+                deque.pop_back().unwrap(),
+            ),
+        };
+        if let (Value::Int(lower), Value::Int(upper), Value::Int(inc), Value::Block(_)) =
+            (lower.clone(), upper.clone(), inc.clone(), &body)
+        {
+            for i in (lower..upper).step_by(inc as usize) {
+                match place {
+                    Place::Left => deque.push_front(Value::Int(i as i64)),
+                    Place::Right => deque.push_back(Value::Int(i as i64)),
+                }
+                exec_block(deque, place, &body);
+            }
+        } else {
+            println!("range: expected start, end, step, and block");
+            println!(
+                "range: instead got {:?}",
+                (
+                    &lower.to_string(),
+                    &upper.to_string(),
+                    &inc.to_string(),
+                    body
+                )
+            );
+        }
+    }
+
+    pub fn while_instr(deque: &mut VecDeque<Value>, place: Place) {
+        // pop 2 times:
+        // condition block, loop body block
+        let (condition, loop_body) = match place {
+            Place::Left => (deque.pop_front().unwrap(), deque.pop_front().unwrap()),
+            Place::Right => (deque.pop_back().unwrap(), deque.pop_back().unwrap()),
+        };
+        if let Value::Block(_) = condition {
+            if let Value::Block(_) = loop_body {
+                loop {
+                    // println!("while: condition block: {}", condition.to_string());
+                    // println!("while: loop block: {}", loop_body.to_string());
+                    exec_block(deque, place, &condition);
+                    let top = match place {
+                        Place::Left => deque.pop_front().unwrap(),
+                        Place::Right => deque.pop_back().unwrap(),
+                    };
+                    // println!("while: top: {}", top.to_string());
+                    // exit the loop if the condition is false
+                    let truth = truthiness_of(top.clone());
+                    if !truth {
+                        // println!("while: condition is false");
+                        break;
+                    }
+                    exec_block(deque, place, &loop_body);
+                }
+            } else {
+                println!("while: expected loop body block");
+            }
+        } else {
+            println!("while: expected condition block");
+        }
+        // println!("while: done");
+    }
+
+    pub fn itl(deque: &mut VecDeque<Value>, place: Place) {
+        // pop 3 blocks: condition, true, false
+        let (condition, true_block, false_block) = match place {
+            Place::Left => (
+                deque.pop_front().unwrap(),
+                deque.pop_front().unwrap(),
+                deque.pop_front().unwrap(),
+            ),
+            Place::Right => (
+                deque.pop_back().unwrap(),
+                deque.pop_back().unwrap(),
+                deque.pop_back().unwrap(),
+            ),
+        };
+        // exec condition
+        exec_block(deque, place, &condition);
+        // check the truthiness of the top of the stack
+        let truth = truthiness_of(match place {
+            Place::Left => deque.pop_front().unwrap(),
+            Place::Right => deque.pop_back().unwrap(),
+        });
+        if truth {
+            exec_block(deque, place, &true_block);
+        } else {
+            exec_block(deque, place, &false_block);
+        }
+    }
+
     // IO
-    pub fn il(deque: &mut VecDeque<Value>, place: Place) {
+    pub fn il() -> ValResult {
         let mut input = String::new();
         match io::stdin().read_line(&mut input) {
             Ok(_) => {
@@ -551,19 +824,12 @@ pub mod eval_instr {
                 for c in input.chars() {
                     input_list.push(Value::Char(c));
                 }
-                let input_list = Value::List(input_list);
-                match place {
-                    Place::Left => deque.push_front(input_list),
-                    Place::Right => deque.push_back(input_list),
-                }
+                Ok(Value::List(input_list))
             }
-            Err(_) => {
-                println!("error reading input");
-                std::process::exit(1);
-            }
+            Err(_) => Err("il: error reading from stdin"),
         }
     }
-    pub fn ia(deque: &mut VecDeque<Value>, place: Place) {
+    pub fn ia() -> ValResult {
         // reads everything from stdin and puts it into a list of chars
         let mut input = String::new();
         let stdin = io::stdin();
@@ -576,24 +842,13 @@ pub mod eval_instr {
                 for c in input.chars() {
                     input_list.push(Value::Char(c));
                 }
-                let input_list = Value::List(input_list);
-                match place {
-                    Place::Left => deque.push_front(input_list),
-                    Place::Right => deque.push_back(input_list),
-                }
+                Ok(Value::List(input_list))
             }
-            Err(_) => {
-                println!("error reading input");
-                std::process::exit(1);
-            }
+            Err(_) => Err("ia: error reading from stdin"),
         }
     }
 
-    pub fn ol(stack: &mut VecDeque<Value>, place: Place) {
-        let literal = match place {
-            Place::Left => stack.pop_front().unwrap(),
-            Place::Right => stack.pop_back().unwrap(),
-        };
+    pub fn ol(literal: Value) -> ValResult {
         // if all elements in literal are Literal::Char, then print them in double quotes instead of as a list
         let mut is_char_list = true;
         match literal {
@@ -620,14 +875,11 @@ pub mod eval_instr {
             }
             _ => println!("{}", literal.to_string()),
         };
+        Ok(Value::None)
     }
 
     // pretty much the same as ol, consider consolidating
-    pub fn ow(stack: &mut VecDeque<Value>, place: Place) {
-        let literal = match place {
-            Place::Left => stack.pop_front().unwrap(),
-            Place::Right => stack.pop_back().unwrap(),
-        };
+    pub fn ow(literal: Value) -> ValResult {
         // if all elements in literal are Literal::Char, then print them in double quotes instead of as a list
         let mut is_char_list = true;
         match literal {
@@ -654,6 +906,7 @@ pub mod eval_instr {
             }
             _ => print!("{}", literal.to_string()),
         };
+        Ok(Value::None)
     }
 }
 
@@ -690,6 +943,7 @@ pub mod eval {
     pub fn call_instr(deque: &mut VecDeque<Value>, instr: String, place: Place) {
         match instr.as_str() {
             // DEQUE OPS
+            "clear" => clear(deque, place),
             "pop" => pop(deque, place),
             "dup" => dup(deque, place),
             "rot" => rot(deque, place),
@@ -716,7 +970,7 @@ pub mod eval {
             "^" => binary(deque, place, bitxor, true),
             "n" => unary(deque, place, bitnot, true),
             // COMPARISON OPS
-            "==" => binary(deque, place, eq, true),
+            "=" => binary(deque, place, eq, true),
             "!=" => binary(deque, place, neq, true),
             "<" => binary(deque, place, lt, true),
             ">" => binary(deque, place, gt, true),
@@ -752,45 +1006,16 @@ pub mod eval {
 
             // CONTROL FLOW OPS
             "exec" => exec(deque, place),
-            "loop" => {
-                // pop a block and run it forever
-                let block = match &place {
-                    Place::Left => deque.pop_front().unwrap(),
-                    Place::Right => deque.pop_back().unwrap(),
-                };
-                if let Value::Block(block) = block {
-                    loop {
-                        for exec in block.iter() {
-                            match exec {
-                                Exec::Left(op) => match op {
-                                    Op::Literal(lit) => {
-                                        deque.push_front(lit.clone());
-                                    }
-                                    Op::Instruction(instruction) => {
-                                        call_instr(deque, instruction.clone(), Place::Left)
-                                    }
-                                },
-                                Exec::Right(op) => match op {
-                                    Op::Literal(lit) => {
-                                        deque.push_back(lit.clone());
-                                    }
-                                    Op::Instruction(instruction) => {
-                                        call_instr(deque, instruction.clone(), Place::Right)
-                                    }
-                                },
-                            }
-                        }
-                    }
-                } else {
-                    println!("loop: expected block");
-                }
-            }
+            "loop" => loop_instr(deque, place),
+            "range" => range(deque, place),
+            "while" => while_instr(deque, place),
+            "itl" => itl(deque, place),
 
             // IO
-            "il" => il(deque, place),
-            "ia" => ia(deque, place),
-            "ol" => ol(deque, place),
-            "ow" => ow(deque, place),
+            "il" => nilary(deque, place, il, true),
+            "ia" => nilary(deque, place, ia, true),
+            "ol" => unary(deque, place, ol, false),
+            "ow" => unary(deque, place, ow, false),
             _ => println!("Unknown instruction: {}", instr),
         }
     }
