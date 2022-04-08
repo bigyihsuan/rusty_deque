@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::{collections::VecDeque, io::Write};
 
 mod evaluator;
@@ -29,7 +31,7 @@ fn main() {
     // -a: print the AST after parsing
 
     // cli format:
-    // cargo run [-p] [-t] [-a] [-f <filename>] [-c <expr>]
+    // cargo run -- [-p] [-t] [-a] [-f <filename>] [-c <expr>]
 
     let args = std::env::args();
     let mut args_iter = args.skip(1); // skip program name
@@ -113,8 +115,8 @@ fn main() {
 }
 
 pub fn print_usage() {
-    println!("usage: cargo run [-p] [-t] [-a] [-f <filename>] [-c <expr>]");
-    println!("-p: print the stack after code exectution");
+    println!("usage: cargo run -- [-p] [-t] [-a] [-f <filename>] [-c <expr>]");
+    println!("-p: print the stack after code execution");
     println!("-t: print the tokens after lexing");
     println!("-a: print the AST after parsing");
     println!("-f <filename>: read code from this file");

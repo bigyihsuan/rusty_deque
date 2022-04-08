@@ -1,2 +1,11 @@
 # given an int n (n -- n!)
-{dup~ 2! rot~ <!}~ rot~ {pop! 1!}! {dup~ 1~ -~ 2! -1! {in~ *!}! rot~ for~}! rot~ ite~
+# 1~ +~  # exclusive end for range
+# 1~     # guard for final multiplication
+# {*~}~  # loop body: multiply the right two numbers
+# 1~     # index step
+# rot!   # ending index (n+1)
+# 2~     # starting index
+# range~ # for i in range(2, n+1, 1)...
+
+1~+~1~{*~}~1~rot!2~range~ # "clean" deque version
+# 1~+~rot~1~{*~}~1~rot!2~range~ # "unclean" deque version, with stuff on the deque already

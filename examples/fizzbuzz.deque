@@ -1,1 +1,16 @@
-{{{{ow~}~ {pop~ "Fizz"~ ow~}~ {3~ over~ %~ 0~ =~}~ itl~ }~ {pop~ "Buzz"~ ow~}~ {5~ over~ %~ 0~ =~}~ itl~}~ {pop~ "FizzBuzz"~ ol~}~ {15~ over~ %~ 0~ =~}~ itl~ " "~ ow~}~ 1~ 101~ 1~ range~ ""~ ol~
+{
+    {
+        {
+            {ow~}~
+            {pop~ "Fizz"~ ow~}~
+            {3~ over~ %~ 0~ =~}~
+            ite~
+        }~
+        {pop~ "Buzz"~ ow~}~
+        {5~ over~ %~ 0~ =~}~
+        ite~
+    }~
+    {pop~ "FizzBuzz"~ ol~}~
+    {15~ over~ %~ 0~ =~}~
+    ite~ " "~ ow~
+}~ 1~ 101~ 1~ range~ ""~ ol~

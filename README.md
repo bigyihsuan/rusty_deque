@@ -170,7 +170,7 @@ All of these instructs pop blocks that are executed. In the following, a "condit
 * `in`: Pushes the current loop index.
 * `while`: Pops 2 blocks: a condition block, and a body block. The body block executes while the condition block is true. More specifically, it runs the condition block first, checks for a truthy value on the top/front of the deque (depending on which side `while` was called on), and if so, executes the body block. This then repeats until it sees a falsy value after executing the condition block.
 * `break`: Exit the current loop.
-* `itl`: If-Then-Else. Pops 3 blocks: a condtion block, a true block, and a false block. The blocks execute based on the condition block's output. If true, the true block executes. If false, the false block executes.
+* `ite`: If-Then-Else. Pops 3 blocks: a condtion block, a true block, and a false block. The blocks execute based on the condition block's output. If true, the true block executes. If false, the false block executes.
 
 ## Input and Output
 

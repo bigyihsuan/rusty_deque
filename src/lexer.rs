@@ -80,6 +80,9 @@ pub mod lex {
         let mut line: usize = 0;
         let mut tokens = Vec::new();
 
+        // remove \r
+        let input = input.replace("\r", "");
+
         while start < input.len() {
             let (token, s, l) = get_next_token(&input, start, line);
             tokens.push(token);
@@ -118,14 +121,12 @@ pub mod lex {
                 LexerState::Start => {
                     // single-character tokens
                     match input.chars().nth(i) {
-                        Some(' ') | Some('\t') => {
+                        Some(c) if c.is_whitespace() => {
                             s += 1;
                             i += 1;
-                        }
-                        Some('\n') => {
-                            line += 1;
-                            s += 1;
-                            i += 1;
+                            if c == '\n' || c == '\r' {
+                                line += 1;
+                            }
                         }
                         Some('{') => {
                             token_type = TokenType::LeftCurly;

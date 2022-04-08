@@ -785,7 +785,7 @@ pub mod eval_instr {
         // println!("while: done");
     }
 
-    pub fn itl(deque: &mut VecDeque<Value>, place: Place) {
+    pub fn ite(deque: &mut VecDeque<Value>, place: Place) {
         // pop 3 blocks: condition, true, false
         let (condition, true_block, false_block) = match place {
             Place::Left => (
@@ -1009,7 +1009,7 @@ pub mod eval {
             "loop" => loop_instr(deque, place),
             "range" => range(deque, place),
             "while" => while_instr(deque, place),
-            "itl" => itl(deque, place),
+            "ite" => ite(deque, place),
 
             // IO
             "il" => nilary(deque, place, il, true),
