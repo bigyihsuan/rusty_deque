@@ -150,7 +150,7 @@ All of these operators push a boolean. All binary operators pop `a` and `b` and 
 
 List operations still operate on `[Char]` because `[Char]` is still a list.
 
-* `l+`: Concatentates to result the following:
+* `l+`: Concatentates two values to result the following:
   * `(a, b -- [a, b])`
   * `(a, [... b] -- [... b, a])`
   * `([... a], b -- [... a, b])`
@@ -158,7 +158,15 @@ List operations still operate on `[Char]` because `[Char]` is still a list.
 * `l/`: List slice. Pops a list, and 2 ints `a` and `b`. Pushes a slice of the list from index `a`, inclusive, to `b`, exclusive.
 * `li`: List index. Pops a list and an int, pushes the element at that index. Discards if the index is outside of list bounds.
 * `ll`: List length. Pops a list and pushes the number of elements in the list.
+* `lb`: List build. Pops an int, being the number of elements on the deque to take, and pushes a list of those elements.
 * `ld`: List destructuring. Pops a list and pushes all elements in that list.
+
+## List Functions
+These instructions (usually) pop a list and a block and push a list.
+
+* `map`: Pops a list and a block. Applies the block to every element in the list.
+* `filter`: Pops a list and a conditional block. Appplies the block to every element in the list and pushes a list containing only the elements that succeeded the conditional block.
+* `reduce`: Pops a list, an accumulator, and a block. For each element in the list, apply it to the element and the accumulator. Each iteration pushes the accumulator onto the deque after executing the block.
 
 ## Control Flow
 

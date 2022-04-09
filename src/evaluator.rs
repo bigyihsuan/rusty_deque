@@ -635,7 +635,25 @@ pub mod eval_instr {
             _ => Err("invalid operands for list length"),
         }
     }
+    // lb implemented in call_instr
     // ld implemented in call_instr
+
+    // LIST FUNCTIONS
+    pub fn map(list: Value, block: Value) -> ValResult {
+        match (list, &block) {
+            (Value::List(list), Value::Block(_)) => {
+                let mut new_list = Vec::new();
+                let mut temp_deque: VecDeque<Value> = VecDeque::new();
+                for val in list {
+                    temp_deque.push_back(val.clone());
+                    exec_block(&mut temp_deque, &block);
+                    new_list.push(temp_deque.pop_back().unwrap());
+                }
+                Ok(Value::List(new_list))
+            }
+            _ => Err("invalid operands for map"),
+        }
+    }
 
     // CONTROL FLOW
     pub fn exec(deque: &mut VecDeque<Value>, place: Place) {
@@ -666,7 +684,7 @@ pub mod eval_instr {
     }
 
     // utility function to execute a block for the control flow instructions
-    pub fn exec_block(deque: &mut VecDeque<Value>, place: Place, block: &Value) {
+    pub fn exec_block(deque: &mut VecDeque<Value>, block: &Value) {
         if let Value::Block(block) = block {
             for exec in block {
                 // println!("{:?}", deque);
@@ -701,7 +719,7 @@ pub mod eval_instr {
         };
         if let Value::Block(_) = &block {
             loop {
-                exec_block(deque, place, &block);
+                exec_block(deque, &block);
             }
         } else {
             println!("loop: expected block");
@@ -734,7 +752,7 @@ pub mod eval_instr {
                     Place::Left => deque.push_front(Value::Int(i as i64)),
                     Place::Right => deque.push_back(Value::Int(i as i64)),
                 }
-                exec_block(deque, place, &body);
+                exec_block(deque, &body);
             }
         } else {
             println!("range: expected start, end, step, and block");
@@ -762,7 +780,7 @@ pub mod eval_instr {
                 loop {
                     // println!("while: condition block: {}", condition.to_string());
                     // println!("while: loop block: {}", loop_body.to_string());
-                    exec_block(deque, place, &condition);
+                    exec_block(deque, &condition);
                     let top = match place {
                         Place::Left => deque.pop_front().unwrap(),
                         Place::Right => deque.pop_back().unwrap(),
@@ -774,7 +792,7 @@ pub mod eval_instr {
                         // println!("while: condition is false");
                         break;
                     }
-                    exec_block(deque, place, &loop_body);
+                    exec_block(deque, &loop_body);
                 }
             } else {
                 println!("while: expected loop body block");
@@ -800,16 +818,16 @@ pub mod eval_instr {
             ),
         };
         // exec condition
-        exec_block(deque, place, &condition);
+        exec_block(deque, &condition);
         // check the truthiness of the top of the stack
         let truth = truthiness_of(match place {
             Place::Left => deque.pop_front().unwrap(),
             Place::Right => deque.pop_back().unwrap(),
         });
         if truth {
-            exec_block(deque, place, &true_block);
+            exec_block(deque, &true_block);
         } else {
-            exec_block(deque, place, &false_block);
+            exec_block(deque, &false_block);
         }
     }
 
@@ -986,6 +1004,29 @@ pub mod eval {
             "l/" => ternary(deque, place, listslice, true),
             "li" => binary(deque, place, listindex, true),
             "ll" => unary(deque, place, listlen, true),
+            "lb" => {
+                let lit = match place {
+                    Place::Left => deque.pop_front().unwrap(),
+                    Place::Right => deque.pop_back().unwrap(),
+                };
+                match lit {
+                    Literal::Int(element_count) => {
+                        let mut list: Vec<Value> = Vec::new();
+                        for _ in 0..element_count {
+                            let val = match place {
+                                Place::Left => deque.pop_front().unwrap(),
+                                Place::Right => deque.pop_back().unwrap(),
+                            };
+                            list.push(val);
+                        }
+                        match place {
+                            Place::Left => deque.push_front(Literal::List(list)),
+                            Place::Right => deque.push_back(Literal::List(list)),
+                        }
+                    }
+                    _ => println!("lb: expected int"),
+                };
+            }
             "ld" => {
                 let list = match place {
                     Place::Left => deque.pop_front().unwrap(),
@@ -1003,6 +1044,8 @@ pub mod eval {
                     _ => println!("ld: expected list"),
                 };
             }
+            // LIST FUNCTIONS
+            "map" => binary(deque, place, map, true),
 
             // CONTROL FLOW OPS
             "exec" => exec(deque, place),
