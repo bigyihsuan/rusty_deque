@@ -3,4 +3,6 @@
 # while n > 1:
 #   if n is even, n / 2
 #   else, n * 3 + 1
-{dup~ ow~ " "~ ow~ {3~ *~ 1~ +~ ""~ ol~}~ {2~ swap~ /~}~ {dup~ 2~ swap~ %~ 0~ =~}~ ite~}~ {dup~ 1~ ne~}~ while~ ow~ ""~ ol~
+{dup~ {3~ *~ 1~ +~ }~ {2~ swap~ /~}~ {dup~ 2~ swap~ %~ 0~ =~}~ ite~}~ {dup~ 1~ <~}~ while~
+# to output the number of steps in collatz
+pop~ len~ lb~ ll~

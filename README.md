@@ -113,7 +113,7 @@ Instructions have the general philosophy of "discard if failed". If an instructi
 
 ## Deque Operations
 * (`push`: Handled by literals.)
-* `clear`: Clear the deque.****
+* `clear`: Clear the deque.
 * `pop`: Discard one element.
 * `dup`: Duplicate one element.
 * `swap`: Swap the front/back two elements.
