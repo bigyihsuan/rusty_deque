@@ -672,6 +672,22 @@ pub mod eval_instr {
             _ => Err("invalid operands for filter"),
         }
     }
+    pub fn reduce(list: Value, accumulator: Value, block: Value) -> ValResult {
+        match (list, &accumulator, &block) {
+            (Value::List(list), _, Value::Block(_)) => {
+                let mut temp_deque: VecDeque<Value> = VecDeque::new();
+                let mut result = accumulator;
+                for val in list {
+                    temp_deque.push_back(val.clone());
+                    temp_deque.push_back(result.clone());
+                    exec_block(&mut temp_deque, &block);
+                    result = temp_deque.pop_back().unwrap();
+                }
+                Ok(result)
+            }
+            _ => Err("invalid operands for reduce"),
+        }
+    }
 
     // CONTROL FLOW
     pub fn exec(deque: &mut VecDeque<Value>, place: Place) {
@@ -1065,6 +1081,7 @@ pub mod eval {
             // LIST FUNCTIONS
             "map" => binary(deque, place, map, true),
             "filter" => binary(deque, place, filter, true),
+            "reduce" => ternary(deque, place, reduce, true),
 
             // CONTROL FLOW OPS
             "exec" => exec(deque, place),
