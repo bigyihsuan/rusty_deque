@@ -605,6 +605,20 @@ pub mod eval_instr {
             _ => Ok(Value::List(vec![a, b])),
         }
     }
+    pub fn listjoin(list: Value, joiner: Value) -> ValResult {
+        match list {
+            Value::List(list) => {
+                let mut new_list = Vec::new();
+                for val in list {
+                    new_list.push(val);
+                    new_list.push(joiner.clone());
+                }
+                new_list.pop(); // remove the final extra joiner
+                Ok(Value::List(new_list))
+            }
+            _ => Err("listjoin: first argument must be a list"),
+        }
+    }
     pub fn listslice(list: Value, start: Value, end: Value) -> ValResult {
         match (&list, &start, &end) {
             (Value::List(list), Value::Int(start), Value::Int(end))
@@ -1035,6 +1049,7 @@ pub mod eval {
 
             // LIST OPS
             "l+" => binary(deque, place, listcat, true),
+            "lj" => binary(deque, place, listjoin, true),
             "l/" => ternary(deque, place, listslice, true),
             "li" => binary(deque, place, listindex, true),
             "ll" => unary(deque, place, listlen, true),

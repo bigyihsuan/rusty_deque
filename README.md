@@ -155,6 +155,7 @@ List operations still operate on `[Char]` because `[Char]` is still a list.
   * `(a, [... b] -- [... b, a])`
   * `([... a], b -- [... a, b])`
   * `([... a], [... b] -- [... a, ... b])`
+* `lj`: List join. Pops a list, and some value `v`. Pushes a list where every element is separated by `v`: `0~ [1,2,3]~ lj~ => [1,0,2,0,3]`
 * `l/`: List slice. Pops a list, and 2 ints `a` and `b`. Pushes a slice of the list from index `a`, inclusive, to `b`, exclusive.
 * `li`: List index. Pops a list and an int, pushes the element at that index. Discards if the index is outside of list bounds.
 * `ll`: List length. Pops a list and pushes the number of elements in the list.
