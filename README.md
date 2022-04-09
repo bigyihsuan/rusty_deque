@@ -16,6 +16,8 @@ Inspired by [this Esolangs page](https://esolangs.org/wiki/Deque) and [this Conc
 
 # Examples
 
+More examples in the [`examples`](./examples) directory.
+
 ### Hello World
 ```bash
 "Hello World!"~ ol~
@@ -23,13 +25,13 @@ Inspired by [this Esolangs page](https://esolangs.org/wiki/Deque) and [this Conc
 
 ### Cat
 ```bash
-{ia~ ol~}~ loop~
+{il~ ol~}~ loop~
 ```
 
 ### Factorial
 ```bash
 # given an int n (n -- n!)
-{dup~ 2! rot~ <!}~ rot~ {pop! 1!}! {dup~ 1~ -~ 2! -1! {in~ *!}! rot~ for~}! rot~ ite~
+1~ +~ 1~ {*~}~ 1~ rot! 2~ range~
 ```
 
 # Types
@@ -89,12 +91,21 @@ Comments start with a hash mark `#` and end at the end of the line.
 1! 2~ +! # comment after some code
 ```
 
-# Appending Sigils `~` and `!`
+# Sigils `~` and `!`
 
-All instructions and literals are either postpended by an appending sigil, which differs based on which side of the deque the operation works on.
+All instructions and literals are either postpended by a sigil, which differs based on which side of the deque the operation works on.
 A bang `!` means that the operation works on the left of the deque.
 A tilde `~` means that the operation works on the right of the deque.
 
+## Sigil Semantics
+
+You can get both stack-like and queue-like semantics through careful use of sigils:
+
+| Semantic | Add | Remove | Notes                                                               |
+| -------- | --- | ------ | ------------------------------------------------------------------- |
+| Stack    | `x` | `x`    | As long as both sigils are the same, you have stack-like semantics. |
+| Queue    | `~` | `!`    | For a queue that enqueues on the right and deques on the left.      |
+| Queue    | `!` | `~`    | For a queue that enqueues on the left and deques on the right.      |
 
 # Instructions
 
@@ -141,7 +152,7 @@ All of these operators push a boolean. All binary operators pop `a` and `b` and 
 
 
 * `true`, `false`: The boolean constant. Pushes a boolean `true` or `false` onto the deque.
-* `>`,`>=`,`<`,`<=`,`=`: Numerical comparison. You can compare int and float to int and float. You can also compare char to char, but not char to any other type.
+* `>`,`>=`,`<`,`<=`,`=`, `ne`: Numerical comparison. You can compare int and float to int and float. You can also compare char to char, but not char to any other type.
 * `&&`, `||`, `nn`: Logical AND, OR, NOT. Non-zero integers and floats, non-empty lists, and blocks are truthy. All other values are falsey.
 
 ## List Operations
@@ -176,10 +187,11 @@ All of these instructs pop blocks that are executed. In the following, a "condit
 * `exec`: Pops and executes a block.
 * `loop`: Infinite loop.
 * `range`: Pops a lower bound `a`, upper bound `b`, an increment value `c`, and a body block. Equvalent to Python-like `for i in range(a,b,c): body`. Pushes the current index `i` onto the stack before executing the body block.
-* `in`: Pushes the current loop index.
 * `while`: Pops 2 blocks: a condition block, and a body block. The body block executes while the condition block is true. More specifically, it runs the condition block first, checks for a truthy value on the top/front of the deque (depending on which side `while` was called on), and if so, executes the body block. This then repeats until it sees a falsy value after executing the condition block.
-* `break`: Exit the current loop.
 * `ite`: If-Then-Else. Pops 3 blocks: a condtion block, a true block, and a false block. The blocks execute based on the condition block's output. If true, the true block executes. If false, the false block executes.
+
+[comment]: <> (`in`: Pushes the current loop index.)
+[comment]: <> (`break`: Exit the current loop.)
 
 ## Input and Output
 

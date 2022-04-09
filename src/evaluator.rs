@@ -1037,7 +1037,7 @@ pub mod eval {
             "n" => unary(deque, place, bitnot, true),
             // COMPARISON OPS
             "=" => binary(deque, place, eq, true),
-            "!=" => binary(deque, place, neq, true),
+            "ne" => binary(deque, place, neq, true),
             "<" => binary(deque, place, lt, true),
             ">" => binary(deque, place, gt, true),
             "<=" => binary(deque, place, leq, true),

@@ -1,16 +1,16 @@
 {
     {
         {
-            {ow~}~
-            {pop~ "Fizz"~ ow~}~
+            {ow~}~ # everything else
+            {pop~ "Fizz"~ ow~}~ # %3 case
             {3~ over~ %~ 0~ =~}~
             ite~
         }~
-        {pop~ "Buzz"~ ow~}~
+        {pop~ "Buzz"~ ow~}~ # %5 case
         {5~ over~ %~ 0~ =~}~
         ite~
     }~
-    {pop~ "FizzBuzz"~ ol~}~
+    {pop~ "FizzBuzz"~ ol~}~ # %15 case
     {15~ over~ %~ 0~ =~}~
     ite~ " "~ ow~
 }~ 1~ 101~ 1~ range~ ""~ ol~

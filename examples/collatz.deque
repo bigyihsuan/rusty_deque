@@ -1,0 +1,6 @@
+# collatz
+# start with n > 1
+# while n > 1:
+#   if n is even, n / 2
+#   else, n * 3 + 1
+{dup~ ow~ " "~ ow~ {3~ *~ 1~ +~ ""~ ol~}~ {2~ swap~ /~}~ {dup~ 2~ swap~ %~ 0~ =~}~ ite~}~ {dup~ 1~ ne~}~ while~ ow~ ""~ ol~
