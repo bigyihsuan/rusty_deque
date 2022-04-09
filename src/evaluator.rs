@@ -654,6 +654,24 @@ pub mod eval_instr {
             _ => Err("invalid operands for map"),
         }
     }
+    pub fn filter(list: Value, block: Value) -> ValResult {
+        match (list, &block) {
+            (Value::List(list), Value::Block(_)) => {
+                let mut new_list = Vec::new();
+                let mut temp_deque: VecDeque<Value> = VecDeque::new();
+                for val in list {
+                    temp_deque.push_back(val.clone());
+                    exec_block(&mut temp_deque, &block);
+                    let result = temp_deque.pop_back().unwrap();
+                    if let Value::Bool(true) = result {
+                        new_list.push(val.clone());
+                    }
+                }
+                Ok(Value::List(new_list))
+            }
+            _ => Err("invalid operands for filter"),
+        }
+    }
 
     // CONTROL FLOW
     pub fn exec(deque: &mut VecDeque<Value>, place: Place) {
@@ -1046,6 +1064,7 @@ pub mod eval {
             }
             // LIST FUNCTIONS
             "map" => binary(deque, place, map, true),
+            "filter" => binary(deque, place, filter, true),
 
             // CONTROL FLOW OPS
             "exec" => exec(deque, place),
