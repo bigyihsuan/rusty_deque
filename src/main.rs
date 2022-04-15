@@ -1,6 +1,7 @@
-#![allow(dead_code)]
-
 use std::{collections::VecDeque, io::Write};
+
+use rustyline::error::ReadlineError;
+use rustyline::Editor;
 
 mod evaluator;
 mod lexer;
@@ -9,6 +10,8 @@ use evaluator::eval_value::*;
 
 // tests
 mod tests;
+
+const HISTORY: &str = "history.deque";
 
 fn main() {
     // let input_str = String::from(
@@ -170,18 +173,20 @@ pub fn print_deque(deque: &VecDeque<Value>) {
 
 pub fn repl(print_tokens: bool, print_ast: bool, print_stack: bool) {
     let mut deque: VecDeque<evaluator::eval_value::Value> = std::collections::VecDeque::new();
+
+    // adapted from the example code on https://github.com/kkawakam/rustyline
+    let mut rl = Editor::<()>::new();
+    if rl.load_history(HISTORY).is_err() {
+        println!("No previous history.");
+    }
     loop {
-        // print the prompt
-        print!(">>> ");
-        std::io::stdout().flush().unwrap();
-        // get input
-        let mut input = String::new();
-        let result = std::io::stdin().read_line(&mut input);
-        match result {
-            Ok(size) => {
-                if size <= 0 {
+        let readline = rl.readline(">>> ");
+        match readline {
+            Ok(input) => {
+                rl.add_history_entry(input.as_str());
+                if input.len() <= 0 {
                     println!("");
-                    return;
+                    break;
                 }
                 let code_result = run_code(
                     Some(deque.clone()),
@@ -202,9 +207,19 @@ pub fn repl(print_tokens: bool, print_ast: bool, print_stack: bool) {
                     }
                 }
             }
-            Err(_) => {
-                return;
+            Err(ReadlineError::Interrupted) => {
+                println!("CTRL-C");
+                break;
+            }
+            Err(ReadlineError::Eof) => {
+                println!("CTRL-D");
+                break;
+            }
+            Err(err) => {
+                println!("Error: {:?}", err);
+                break;
             }
         }
     }
+    rl.save_history(HISTORY).unwrap();
 }
