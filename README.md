@@ -1,4 +1,4 @@
-# rusty_deque
+# `rusty_deque`
 
 A simple, deque-based programming language to practice writing Rust.
 
@@ -174,11 +174,11 @@ List operations still operate on `[Char]` because `[Char]` is still a list.
 * `ld`: List destructuring. Pops a list and pushes all elements in that list.
 
 ## List Functions
-These instructions (usually) pop a list and a block and push a list.
+These instructions (usually) pop a list and a block and push a list, at minimum. Each of these work on a temporary deque that initially contains only the element currently being worked on.
 
 * `map`: Pops a list and a block. Applies the block to every element in the list.
 * `filter`: Pops a list and a conditional block. Appplies the block to every element in the list and pushes a list containing only the elements that succeeded the conditional block.
-* `reduce`: Pops a list, an accumulator, and a block. For each element in the list, apply it to the element and the accumulator. Each iteration pushes the accumulator onto the deque after executing the block.
+* `reduce`: Pops a list, an accumulator, and a block. For each element in the list, apply it to the element and the accumulator. The accumulator is placed into the temporary deque after placing the element; this can potentially affect any operations where argument order is important.
 
 ## Control Flow
 

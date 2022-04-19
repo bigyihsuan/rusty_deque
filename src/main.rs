@@ -1,4 +1,4 @@
-use std::{collections::VecDeque, io::Write};
+use std::collections::VecDeque;
 
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
@@ -10,8 +10,6 @@ use evaluator::eval_value::*;
 
 // tests
 mod tests;
-
-const HISTORY: &str = "history.deque";
 
 fn main() {
     // let input_str = String::from(
@@ -146,7 +144,7 @@ pub fn run_code(
                 println!("{:#?}", ast);
             }
             // run
-            let deque = evaluator::eval::run_ast(deque, ast);
+            let deque = evaluator::eval::run_ast(deque, ast)?;
             if print_stack {
                 print_deque(&deque);
             }
@@ -176,9 +174,6 @@ pub fn repl(print_tokens: bool, print_ast: bool, print_stack: bool) {
 
     // adapted from the example code on https://github.com/kkawakam/rustyline
     let mut rl = Editor::<()>::new();
-    if rl.load_history(HISTORY).is_err() {
-        println!("No previous history.");
-    }
     loop {
         let readline = rl.readline(">>> ");
         match readline {
@@ -221,5 +216,4 @@ pub fn repl(print_tokens: bool, print_ast: bool, print_stack: bool) {
             }
         }
     }
-    rl.save_history(HISTORY).unwrap();
 }

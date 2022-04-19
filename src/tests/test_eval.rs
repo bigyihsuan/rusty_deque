@@ -7,32 +7,35 @@ mod tests {
     use crate::lexer::lex::*;
     use crate::parser::par::*;
     #[test]
-    fn test_eval_literals() {
+    fn test_eval_literals() -> Result<(), String> {
         let input_str = String::from("[1.2, 'a', [true, 3], -4]~ {ol~}~");
         let tokens = tokenize_code(&input_str);
-        let ast = parse_tokens(&mut tokens.into_iter());
+        let ast = parse_tokens(&mut tokens.into_iter())?;
         // println!("{:#?}", ast.unwrap());
-        run_ast(Option::None, ast.unwrap());
+        run_ast(Option::None, ast)?;
+        Ok(())
     }
 
     #[test]
-    fn test_eval_hello_world() {
+    fn test_eval_hello_world() -> Result<(), String> {
         let input_str = String::from("\"Hello, World!\"~ ol~");
         let tokens = tokenize_code(&input_str);
-        let ast = parse_tokens(&mut tokens.into_iter());
+        let ast = parse_tokens(&mut tokens.into_iter())?;
         // println!("{:#?}", ast.unwrap());
-        run_ast(Option::None, ast.unwrap());
+        run_ast(Option::None, ast)?;
+        Ok(())
     }
 
     #[test]
-    fn test_eval_dup() {
+    fn test_eval_dup() -> Result<(), String> {
         let input_str = String::from("1~ dup~");
         let tokens = tokenize_code(&input_str);
         let ast = parse_tokens(&mut tokens.into_iter());
         // println!("{:#?}", ast.unwrap());
-        let deque = run_ast(Option::None, ast.unwrap());
+        let deque = run_ast(Option::None, ast.unwrap())?;
         let expected = VecDeque::from(vec![Value::Int(1), Value::Int(1)]);
         assert_eq!(deque, expected);
+        Ok(())
     }
 
     // #[test]
@@ -58,7 +61,7 @@ mod tests {
     // }
 
     #[test]
-    fn test_eval_add_int_only() {
+    fn test_eval_add_int_only() -> Result<(), String> {
         let inputs = vec![
             String::from("1~ 2~ +!"),
             String::from("-1~ 2~ +!"),
@@ -74,11 +77,12 @@ mod tests {
 
         for (input, expected) in inputs.iter().zip(expected.iter()) {
             let tokens = tokenize_code(input);
-            let ast = parse_tokens(&mut tokens.into_iter());
+            let ast = parse_tokens(&mut tokens.into_iter())?;
             // println!("{:#?}", ast.unwrap());
-            let deque = run_ast(Option::None, ast.unwrap());
+            let deque = run_ast(Option::None, ast)?;
             assert_eq!(deque, *expected);
         }
+        Ok(())
     }
 
     // get around the pesky floating point inaccuracies
@@ -89,7 +93,7 @@ mod tests {
     }
 
     #[test]
-    fn test_eval_add_mixed() {
+    fn test_eval_add_mixed() -> Result<(), String> {
         let inputs = vec![
             String::from("1.1~ 2~ +!"),
             String::from("1~ 2.2~ +!"),
@@ -114,8 +118,8 @@ mod tests {
 
         for (input, expected) in inputs.iter().zip(expected.iter()) {
             let tokens = tokenize_code(input);
-            let ast = parse_tokens(&mut tokens.into_iter());
-            let deque = run_ast(Option::None, ast.unwrap());
+            let ast = parse_tokens(&mut tokens.into_iter())?;
+            let deque = run_ast(Option::None, ast)?;
             let deque = deque
                 .into_iter()
                 .map(|v| {
@@ -128,10 +132,11 @@ mod tests {
                 .collect::<VecDeque<Value>>();
             assert_eq!(deque, *expected);
         }
+        Ok(())
     }
 
     #[test]
-    fn test_eval_add_float_only() {
+    fn test_eval_add_float_only() -> Result<(), String> {
         let inputs = vec![
             String::from("1.1~ 2.2~ +!"),
             String::from("-1.1~ 2.2~ +!"),
@@ -148,8 +153,8 @@ mod tests {
 
         for (input, expected) in inputs.iter().zip(expected.iter()) {
             let tokens = tokenize_code(input);
-            let ast = parse_tokens(&mut tokens.into_iter());
-            let deque = run_ast(Option::None, ast.unwrap());
+            let ast = parse_tokens(&mut tokens.into_iter())?;
+            let deque = run_ast(Option::None, ast)?;
             let deque = deque
                 .into_iter()
                 .map(|v| {
@@ -162,6 +167,7 @@ mod tests {
                 .collect::<VecDeque<Value>>();
             assert_eq!(deque, *expected);
         }
+        Ok(())
     }
 
     // #[test]
@@ -175,7 +181,7 @@ mod tests {
     // }
 
     #[test]
-    fn test_eval_sub_int_only() {
+    fn test_eval_sub_int_only() -> Result<(), String> {
         let inputs = vec![
             String::from("1~ 2~ -~"),
             String::from("-1~ 2~ -~"),
@@ -192,15 +198,16 @@ mod tests {
 
         for (input, expected) in inputs.iter().zip(expected.iter()) {
             let tokens = tokenize_code(input);
-            let ast = parse_tokens(&mut tokens.into_iter());
+            let ast = parse_tokens(&mut tokens.into_iter())?;
             // println!("{:#?}", ast.unwrap());
-            let deque = run_ast(Option::None, ast.unwrap());
+            let deque = run_ast(Option::None, ast)?;
             assert_eq!(deque, *expected);
         }
+        Ok(())
     }
 
     #[test]
-    fn test_eval_sub_mixed() {
+    fn test_eval_sub_mixed() -> Result<(), String> {
         let inputs = vec![
             String::from("1.1~ 2~ -!"),
             String::from("1~ 2.2~ -!"),
@@ -225,8 +232,8 @@ mod tests {
 
         for (input, expected) in inputs.iter().zip(expected.iter()) {
             let tokens = tokenize_code(input);
-            let ast = parse_tokens(&mut tokens.into_iter());
-            let deque = run_ast(Option::None, ast.unwrap());
+            let ast = parse_tokens(&mut tokens.into_iter())?;
+            let deque = run_ast(Option::None, ast)?;
             let deque = deque
                 .into_iter()
                 .map(|v| {
@@ -239,10 +246,11 @@ mod tests {
                 .collect::<VecDeque<Value>>();
             assert_eq!(deque, *expected);
         }
+        Ok(())
     }
 
     #[test]
-    fn test_eval_sub_float_only() {
+    fn test_eval_sub_float_only() -> Result<(), String> {
         let inputs = vec![
             String::from("1.1~ 2.2~ -!"),
             String::from("-1.1~ 2.2~ -!"),
@@ -259,8 +267,8 @@ mod tests {
 
         for (input, expected) in inputs.iter().zip(expected.iter()) {
             let tokens = tokenize_code(input);
-            let ast = parse_tokens(&mut tokens.into_iter());
-            let deque = run_ast(Option::None, ast.unwrap());
+            let ast = parse_tokens(&mut tokens.into_iter())?;
+            let deque = run_ast(Option::None, ast)?;
             let deque = deque
                 .into_iter()
                 .map(|v| {
@@ -273,6 +281,7 @@ mod tests {
                 .collect::<VecDeque<Value>>();
             assert_eq!(deque, *expected);
         }
+        Ok(())
     }
 
     #[test]
