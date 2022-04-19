@@ -12,16 +12,6 @@ use evaluator::eval_value::*;
 mod tests;
 
 fn main() {
-    // let input_str = String::from(
-    //     "# given an int n (n -- n~)
-    // {dup~ 2! rot~ <!}~ rot~ {pop! 1!}! {dup~ 1~ -~ 2! -1! {in~ *!}! rot~ for~}! rot~ ite~",
-    // );
-    // println!("{}", input_str);
-    // let tokens = lexer::lex::tokenize_code(&input_str);
-    // // println!("{:?}", &tokens);
-    // let ast = parser::par::parse_tokens(&mut tokens.into_iter());
-    // println!("{:#?}", ast);
-
     // possible command-line args
     // all of these are optional
     // no args: run the REPL
@@ -122,6 +112,7 @@ pub fn print_usage() {
     println!("-a: print the AST after parsing");
     println!("-f <filename>: read code from this file");
     println!("-c <expr>: evaluate this expression");
+    println!("(no args): run the REPL");
 }
 
 pub fn run_code(
