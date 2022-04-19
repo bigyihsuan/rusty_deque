@@ -166,6 +166,7 @@ pub fn repl(print_tokens: bool, print_ast: bool, print_stack: bool) {
     // adapted from the example code on https://github.com/kkawakam/rustyline
     let mut rl = Editor::<()>::new();
     loop {
+        println!();
         let readline = rl.readline(">>> ");
         match readline {
             Ok(input) => {
@@ -184,6 +185,7 @@ pub fn repl(print_tokens: bool, print_ast: bool, print_stack: bool) {
                 match code_result {
                     Ok(new_deque) => {
                         deque = new_deque;
+                        // println!();
                     }
                     Err(e) => {
                         println!("{}", e);
