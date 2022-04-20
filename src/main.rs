@@ -166,7 +166,7 @@ pub fn repl(print_tokens: bool, print_ast: bool, print_stack: bool) {
     // adapted from the example code on https://github.com/kkawakam/rustyline
     let mut rl = Editor::<()>::new();
     loop {
-        println!();
+        print!("");
         let readline = rl.readline(">>> ");
         match readline {
             Ok(input) => {
